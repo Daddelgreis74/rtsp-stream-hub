@@ -3,8 +3,7 @@
 const state = {
   token: localStorage.getItem('token') || null,
   user: JSON.parse(localStorage.getItem('user')) || null,
-  activeCameraId: null,
-  playbackMode: 'webrtc' // 'webrtc' or 'mjpeg'
+  activeCameraId: null
 };
 
 // UI Elements
@@ -39,6 +38,9 @@ const el = {
   cameraIdField: document.getElementById('cameraIdField'),
   cameraNameInput: document.getElementById('cameraNameInput'),
   cameraUrlInput: document.getElementById('cameraUrlInput'),
+  cameraStreamType: document.getElementById('cameraStreamType'),
+  cameraRefreshInterval: document.getElementById('cameraRefreshInterval'),
+  refreshIntervalContainer: document.getElementById('refreshIntervalContainer'),
   dashboardLinkContainer: document.getElementById('dashboardLinkContainer'),
   dashboardLinkInput: document.getElementById('dashboardLinkInput'),
   btnCopyDashboardLink: document.getElementById('btnCopyDashboardLink'),
@@ -63,6 +65,53 @@ const el = {
   btnStopStream: document.getElementById('btnStopStream')
 };
 
+// Helper: Escape HTML string
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, function(m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+  });
+}
+
+// === INACTIVITY AUTO-LOGOUT (15 Minutes) ===
+const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
+let inactivityTimer = null;
+
+function resetInactivityTimer() {
+  if (!state.token) return;
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    console.log('Session expired due to 15 minutes of inactivity');
+    logout(true);
+  }, INACTIVITY_TIMEOUT_MS);
+}
+
+['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach((evt) => {
+  window.addEventListener(evt, resetInactivityTimer, { passive: true });
+});
+
+function logout(dueToInactivity = false) {
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+
+  stopPlayback();
+  el.playerModal.hide();
+
+  el.loginSection.classList.remove('d-none');
+  el.mainSection.classList.add('d-none');
+
+  if (dueToInactivity) {
+    el.loginAlert.textContent = 'Du wurdest aufgrund von Inaktivität automatisch abgemeldet.';
+    el.loginAlert.className = 'alert alert-warning';
+    el.loginAlert.classList.remove('d-none');
+  } else {
+    el.loginAlert.classList.add('d-none');
+  }
+}
+
 // Theme Toggle
 let currentTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-bs-theme', currentTheme);
@@ -82,6 +131,15 @@ function updateThemeIcon(theme) {
     el.themeIcon.className = 'fa-solid fa-moon';
   }
 }
+
+// Toggle Snapshot interval container in modal
+el.cameraStreamType.addEventListener('change', () => {
+  if (el.cameraStreamType.value === 'snapshot') {
+    el.refreshIntervalContainer.classList.remove('d-none');
+  } else {
+    el.refreshIntervalContainer.classList.add('d-none');
+  }
+});
 
 // === AUTHENTICATION ===
 
@@ -107,16 +165,13 @@ el.loginForm.addEventListener('submit', async (e) => {
     initApp();
   } catch (err) {
     el.loginAlert.textContent = err.message;
+    el.loginAlert.className = 'alert alert-danger';
     el.loginAlert.classList.remove('d-none');
   }
 });
 
 el.btnLogoutBtn.addEventListener('click', () => {
-  state.token = null;
-  state.user = null;
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  location.reload();
+  logout(false);
 });
 
 // === APP INITIALIZATION ===
@@ -147,6 +202,7 @@ function initApp() {
     el.btnDiscoverOpenBtn.classList.add('d-none');
   }
 
+  resetInactivityTimer();
   loadCameras();
 }
 
@@ -199,20 +255,31 @@ function renderCameras(cameras) {
     const card = document.createElement('div');
     card.className = 'col';
     
+    const sType = c.stream_type || 'auto';
+    let badgeClass = 'bg-secondary';
+    let badgeText = 'Auto';
+    if (sType === 'rtsp') { badgeClass = 'bg-primary'; badgeText = 'RTSP'; }
+    else if (sType === 'mjpeg') { badgeClass = 'bg-info text-dark'; badgeText = 'MJPEG'; }
+    else if (sType === 'hls') { badgeClass = 'bg-danger'; badgeText = 'HLS'; }
+    else if (sType === 'snapshot') { badgeClass = 'bg-warning text-dark'; badgeText = `Snapshot (${c.refresh_interval || 2}s)`; }
+
     // Check if user has edit rights to show modify buttons
     const editButtons = state.user.can_edit ? `
       <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between">
-        <button class="btn btn-outline-secondary btn-sm" onclick="openEditCameraModal(${c.id}, '${c.name}', '${c.url}')"><i class="fa-solid fa-edit me-1"></i>Edit</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="openEditCameraModal(${c.id}, '${escapeHtml(c.name)}', '${escapeHtml(c.url)}', '${c.stream_type || 'auto'}', ${c.refresh_interval || 2})"><i class="fa-solid fa-edit me-1"></i>Edit</button>
         <button class="btn btn-outline-danger btn-sm" onclick="deleteCamera(${c.id})"><i class="fa-solid fa-trash me-1"></i>Löschen</button>
       </div>
     ` : '';
 
     card.innerHTML = `
       <div class="card h-100 shadow-sm camera-card-hover">
-        <div class="card-body d-flex flex-column justify-content-between" onclick="openPlayer(${c.id}, '${c.name}')" style="cursor: pointer;">
+        <div class="card-body d-flex flex-column justify-content-between" onclick="openPlayer(${c.id}, '${escapeHtml(c.name)}')" style="cursor: pointer;">
           <div>
-            <h5 class="card-title fw-bold mb-1"><i class="fa-solid fa-video me-2 text-primary"></i>${c.name}</h5>
-            <p class="text-muted small text-break mb-0">${c.url}</p>
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <h5 class="card-title fw-bold mb-0"><i class="fa-solid fa-video me-2 text-primary"></i>${escapeHtml(c.name)}</h5>
+              <span class="badge ${badgeClass} ms-2">${badgeText}</span>
+            </div>
+            <p class="text-muted small text-break mb-0">${escapeHtml(c.url)}</p>
           </div>
           <div class="mt-3 text-end text-primary small fw-bold">
             Stream starten <i class="fa-solid fa-chevron-right ms-1"></i>
@@ -229,16 +296,28 @@ function renderCameras(cameras) {
 el.btnAddCameraModalOpenBtn.addEventListener('click', () => {
   el.cameraForm.reset();
   el.cameraIdField.value = '';
+  el.cameraStreamType.value = 'auto';
+  el.cameraRefreshInterval.value = '2';
+  el.refreshIntervalContainer.classList.add('d-none');
   el.dashboardLinkContainer.classList.add('d-none');
   el.cameraModalTitle.textContent = 'Kamera hinzufügen';
   el.cameraModal.show();
 });
 
 // Open Edit Camera Modal
-window.openEditCameraModal = async (id, name, url) => {
+window.openEditCameraModal = async (id, name, url, streamType = 'auto', refreshInterval = 2) => {
   el.cameraIdField.value = id;
   el.cameraNameInput.value = name;
   el.cameraUrlInput.value = url;
+  el.cameraStreamType.value = streamType || 'auto';
+  el.cameraRefreshInterval.value = refreshInterval || 2;
+  
+  if (el.cameraStreamType.value === 'snapshot') {
+    el.refreshIntervalContainer.classList.remove('d-none');
+  } else {
+    el.refreshIntervalContainer.classList.add('d-none');
+  }
+
   el.cameraModalTitle.textContent = 'Kamera bearbeiten';
   el.dashboardLinkContainer.classList.add('d-none');
 
@@ -266,6 +345,8 @@ el.cameraForm.addEventListener('submit', async (e) => {
   const id = el.cameraIdField.value;
   const name = el.cameraNameInput.value;
   const url = el.cameraUrlInput.value;
+  const stream_type = el.cameraStreamType.value;
+  const refresh_interval = parseInt(el.cameraRefreshInterval.value, 10) || 2;
 
   const method = id ? 'PUT' : 'POST';
   const apiPath = id ? `/api/cameras/${id}` : '/api/cameras';
@@ -277,7 +358,7 @@ el.cameraForm.addEventListener('submit', async (e) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${state.token}`
       },
-      body: JSON.stringify({ name, url })
+      body: JSON.stringify({ name, url, stream_type, refresh_interval })
     });
     if (!res.ok) {
       const err = await res.json();
@@ -317,7 +398,7 @@ window.openPlayer = (id, name) => {
   el.mjpegImg.classList.remove('d-none');
   
   el.mjpegImg.onerror = () => {
-    el.playerStatus.textContent = 'Transcodierungs-Fehler (Prüfe die RTSP URL oder Kamera-Erreichbarkeit)';
+    el.playerStatus.textContent = 'Transcodierungs-Fehler (Prüfe die Stream URL oder Kamera-Erreichbarkeit)';
   };
 };
 
@@ -349,12 +430,11 @@ function renderUsers(users) {
   users.forEach(u => {
     const row = document.createElement('tr');
     
-    // Enable toggles only if it's not the logged-in admin user themselves
     const isSelf = u.id === state.user.id;
     const disabledAttr = isSelf ? 'disabled' : '';
 
     row.innerHTML = `
-      <td class="fw-bold">${u.username} ${isSelf ? '<span class="badge bg-secondary text-light ms-1">Du</span>' : ''}</td>
+      <td class="fw-bold">${escapeHtml(u.username)} ${isSelf ? '<span class="badge bg-secondary text-light ms-1">Du</span>' : ''}</td>
       <td>
         <select class="form-select form-select-sm" ${disabledAttr} onchange="updateUserPermissions(${u.id}, this.value, ${u.can_view}, ${u.can_edit})">
           <option value="user" ${u.role === 'user' ? 'selected' : ''}>Standard Benutzer</option>
@@ -416,9 +496,7 @@ el.userForm.addEventListener('submit', async (e) => {
 
 // Update User Permissions
 window.updateUserPermissions = async (id, newRole = null, newCanView = null, newCanEdit = null) => {
-  // Find current user row configuration in UI
   try {
-    // Get all current users to find the correct state if parameters are null
     const resList = await fetch('/api/users', {
       headers: { 'Authorization': `Bearer ${state.token}` }
     });
@@ -543,17 +621,16 @@ function renderDiscoveryResults(devices) {
     const item = document.createElement('div');
     item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3';
     
-    // We try to locate IP address
     const ip = d.address || (d.xaddrs && d.xaddrs[0] ? new URL(d.xaddrs[0]).hostname : '');
     const model = d.hardware || d.name || 'Unbekannte Kamera';
     
     item.innerHTML = `
       <div>
-        <h6 class="fw-bold mb-1"><i class="fa-solid fa-microchip text-primary me-2"></i>${model}</h6>
-        <span class="badge bg-secondary mb-1">IP: ${ip}</span>
-        <div class="text-muted small">Location: ${d.location || 'Keine Angabe'}</div>
+        <h6 class="fw-bold mb-1"><i class="fa-solid fa-microchip text-primary me-2"></i>${escapeHtml(model)}</h6>
+        <span class="badge bg-secondary mb-1">IP: ${escapeHtml(ip)}</span>
+        <div class="text-muted small">Location: ${escapeHtml(d.location || 'Keine Angabe')}</div>
       </div>
-      <button class="btn btn-primary btn-sm fw-bold" onclick="selectDiscoveredCamera('${model}', '${ip}')">
+      <button class="btn btn-primary btn-sm fw-bold" onclick="selectDiscoveredCamera('${escapeHtml(model)}', '${escapeHtml(ip)}')">
         <i class="fa-solid fa-plus me-1"></i>Hinzufügen
       </button>
     `;
@@ -564,12 +641,14 @@ function renderDiscoveryResults(devices) {
 window.selectDiscoveredCamera = (model, ip) => {
   el.discoveryModal.hide();
   
-  // Prefill the Camera Add form
   el.cameraForm.reset();
   el.cameraIdField.value = '';
   el.dashboardLinkContainer.classList.add('d-none');
   el.cameraNameInput.value = `${model}`;
   el.cameraUrlInput.value = `rtsp://admin:passwort@${ip}:554/ch0`;
+  el.cameraStreamType.value = 'rtsp';
+  el.cameraRefreshInterval.value = '2';
+  el.refreshIntervalContainer.classList.add('d-none');
   el.cameraModalTitle.textContent = 'Kamera hinzufügen';
   el.cameraModal.show();
 };

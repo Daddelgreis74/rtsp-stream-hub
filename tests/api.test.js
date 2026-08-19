@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const http = require('http');
 const app = require('../src/server');
+const { resolveStreamType } = require('../src/transcoder');
 
 let server;
 let baseUrl;
@@ -40,4 +41,12 @@ test('GET /api/cameras - Missing token returns 401', async () => {
   assert.strictEqual(res.status, 401);
   const data = await res.json();
   assert.strictEqual(data.error, 'Access token missing');
+});
+
+test('Stream Type Resolver - Auto detects RTSP, MJPEG, HLS, Snapshot', () => {
+  assert.strictEqual(resolveStreamType('rtsp://192.168.1.10/stream', 'auto'), 'rtsp');
+  assert.strictEqual(resolveStreamType('http://192.168.1.10/video.m3u8', 'auto'), 'hls');
+  assert.strictEqual(resolveStreamType('https://domain.com/cam.jpg', 'auto'), 'snapshot');
+  assert.strictEqual(resolveStreamType('http://192.168.1.10/mjpg/video.cgi', 'auto'), 'mjpeg');
+  assert.strictEqual(resolveStreamType('http://192.168.1.10/stream', 'snapshot'), 'snapshot');
 });

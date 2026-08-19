@@ -29,9 +29,15 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS cameras (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      url TEXT NOT NULL
+      url TEXT NOT NULL,
+      stream_type TEXT NOT NULL DEFAULT 'auto',
+      refresh_interval INTEGER NOT NULL DEFAULT 2
     )
   `);
+
+  // Migrations for existing databases
+  db.run(`ALTER TABLE cameras ADD COLUMN stream_type TEXT DEFAULT 'auto'`, () => {});
+  db.run(`ALTER TABLE cameras ADD COLUMN refresh_interval INTEGER DEFAULT 2`, () => {});
 
   // Seed default admin if table is empty
   db.get('SELECT COUNT(*) as count FROM users', [], (err, row) => {

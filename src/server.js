@@ -154,15 +154,22 @@ app.post('/api/cameras', authenticateToken, (req, res) => {
   if (req.user.can_edit !== 1) {
     return res.status(403).json({ error: 'No permission to edit cameras' });
   }
-  const { name, url } = req.body;
+  const { name, url, stream_type, refresh_interval } = req.body;
   if (!name || !url) {
     return res.status(400).json({ error: 'Camera name and URL required' });
   }
 
-  db.run('INSERT INTO cameras (name, url) VALUES (?, ?)', [name, url], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, cameraId: this.lastID });
-  });
+  const sType = stream_type || 'auto';
+  const rInterval = parseInt(refresh_interval, 10) || 2;
+
+  db.run(
+    'INSERT INTO cameras (name, url, stream_type, refresh_interval) VALUES (?, ?, ?, ?)',
+    [name, url, sType, rInterval],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, cameraId: this.lastID });
+    }
+  );
 });
 
 // Update camera
@@ -170,11 +177,18 @@ app.put('/api/cameras/:id', authenticateToken, (req, res) => {
   if (req.user.can_edit !== 1) {
     return res.status(403).json({ error: 'No permission to edit cameras' });
   }
-  const { name, url } = req.body;
-  db.run('UPDATE cameras SET name = ?, url = ? WHERE id = ?', [name, url, req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
-  });
+  const { name, url, stream_type, refresh_interval } = req.body;
+  const sType = stream_type || 'auto';
+  const rInterval = parseInt(refresh_interval, 10) || 2;
+
+  db.run(
+    'UPDATE cameras SET name = ?, url = ?, stream_type = ?, refresh_interval = ? WHERE id = ?',
+    [name, url, sType, rInterval, req.params.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
 });
 
 // Delete camera
@@ -234,12 +248,12 @@ app.get('/api/streams/mjpeg/:id', authenticateToken, (req, res) => {
     return res.status(403).send('Forbidden');
   }
 
-  db.get('SELECT url FROM cameras WHERE id = ?', [req.params.id], (err, row) => {
+  db.get('SELECT * FROM cameras WHERE id = ?', [req.params.id], (err, row) => {
     if (err || !row) {
       return res.status(404).send('Camera not found');
     }
-    // Launch FFmpeg transcoder
-    startMjpegStream(row.url, req, res);
+    // Launch Multi-Protocol MJPEG stream dispatcher
+    startMjpegStream(row, req, res);
   });
 });
 

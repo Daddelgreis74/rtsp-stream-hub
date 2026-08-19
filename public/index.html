@@ -140,9 +140,31 @@
               <input type="text" class="form-control" id="cameraNameInput" required placeholder="z.B. Garten TC60">
             </div>
             <div class="mb-3">
-              <label for="cameraUrlInput" class="form-label">Kamera Stream URL (RTSP oder HTTP/HTTPS)</label>
-              <input type="text" class="form-control" id="cameraUrlInput" required placeholder="rtsp://... oder https://...">
-              <div class="form-text">Unterstützt IP-Kameras mit H.264 RTSP Stream sowie direkte HTTP/HTTPS MJPEG Webcams.</div>
+              <label for="cameraUrlInput" class="form-label">Kamera Stream URL (RTSP, HTTP-MJPEG, HLS, Snapshot)</label>
+              <input type="text" class="form-control" id="cameraUrlInput" required placeholder="rtsp://..., http://..., https://...m3u8, .jpg">
+              <div class="form-text">Unterstützt alle Formate (RTSP H.264/H.265, direkte Webcams, HLS Streams und JPEG Bilder).</div>
+            </div>
+            <div class="row">
+              <div class="col-md-7 mb-3">
+                <label for="cameraStreamType" class="form-label">Stream-Typ</label>
+                <select class="form-select" id="cameraStreamType">
+                  <option value="auto">Automatisch erkennen</option>
+                  <option value="rtsp">RTSP Stream (H.264 / H.265)</option>
+                  <option value="mjpeg">Direkter MJPEG Stream</option>
+                  <option value="hls">HLS Livestream (.m3u8)</option>
+                  <option value="snapshot">JPEG/PNG Snapshot (Intervall)</option>
+                </select>
+              </div>
+              <div class="col-md-5 mb-3 d-none" id="refreshIntervalContainer">
+                <label for="cameraRefreshInterval" class="form-label">Intervall</label>
+                <select class="form-select" id="cameraRefreshInterval">
+                  <option value="1">1 Sekunde</option>
+                  <option value="2" selected>2 Sekunden</option>
+                  <option value="5">5 Sekunden</option>
+                  <option value="10">10 Sekunden</option>
+                  <option value="30">30 Sekunden</option>
+                </select>
+              </div>
             </div>
             <div class="mb-3 d-none" id="dashboardLinkContainer">
               <label class="form-label fw-bold text-success">Dashboard Stream Link (MJPEG)</label>
