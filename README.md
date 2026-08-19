@@ -1,51 +1,95 @@
+<div align="center">
+
 # 🎥 RTSP Stream Hub
 
-[![GitHub Release](https://img.shields.io/github/v/release/Daddelgreis74/rtsp-stream-hub?color=blue&logo=github)](https://github.com/Daddelgreis74/rtsp-stream-hub/releases)
-[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://github.com/Daddelgreis74/rtsp-stream-hub/pkgs/container/rtsp-stream-hub)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**High-Performance RTSP, ONVIF & Webcam Stream Hub with On-the-Fly MJPEG Transcoding & Hardware Acceleration**
 
-**RTSP Stream Hub** ist eine leichtgewichtige, eigenständige und dockerisierte Webanwendung zur Verwaltung und On-the-fly-Transcodierung von RTSP-Kamerastreams in browserkompatibles MJPEG. 
+[![GitHub Release](https://img.shields.io/github/v/release/Daddelgreis74/rtsp-stream-hub?color=0080ff&logo=github&style=flat-square)](https://github.com/Daddelgreis74/rtsp-stream-hub/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/daddelgreis74/rtsp-stream-hub?logo=docker&logoColor=white&color=2496ED&style=flat-square)](https://hub.docker.com/r/daddelgreis74/rtsp-stream-hub)
+[![Docker Image Size](https://img.shields.io/docker/image-size/daddelgreis74/rtsp-stream-hub/latest?logo=docker&logoColor=white&style=flat-square)](https://hub.docker.com/r/daddelgreis74/rtsp-stream-hub)
+[![TrueNAS Community App](https://img.shields.io/badge/TrueNAS-Community_App-00a4e4?logo=truenas&logoColor=white&style=flat-square)](https://apps.truenas.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-Sie wurde speziell entwickelt, um IP-Kamerastreams (z. B. Tapo, Reolink, Axis, Hikvision) nahtlos, latenzarm und ohne externe Abhängigkeiten in moderne SmartHome-Dashboards (wie Neo Deck oder Home Assistant) und Webbrowser einzubinden.
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-truenas-scale">TrueNAS SCALE</a> •
+  <a href="#-configuration">Configuration</a> •
+  <a href="#-api-reference">API Reference</a> •
+  <a href="#-license">License</a>
+</p>
 
----
-
-## ✨ Hauptfunktionen
-
-* 🔄 **Autarke RTSP-zu-MJPEG Transcodierung:** Nutzt integriertes `ffmpeg` zur Konvertierung von RTSP (H.264/H.265) in flüssige MJPEG-Streams in Echtzeit.
-* 🌐 **Multi-Protokoll & Flexible URLs:** Unterstützt neben RTSP auch direkte HTTP/HTTPS-Webcams, HLS `.m3u8` Livestreams und statische JPEG-Snapshots mit automatischem Refresh-Intervall.
-* ⚡ **GPU-Hardwarebeschleunigung (VAAPI):** Automatische Erkennung und Nutzung von Intel-/AMD-Grafikkarten (`/dev/dri`), um die CPU-Last des Host-Servers drastisch zu reduzieren.
-* 📡 **ONVIF Auto-Discovery:** Automatischer Netzwerk-Suchlauf nach IP-Kameras im lokalen Subnetz mit 1-Klick-Übernahme.
-* 👥 **Multi-User & Rechteverwaltung:** Integriertes Admin-Panel mit feingranularer Rechtevergabe (z. B. nur Kameras ansehen vs. Kameras verwalten).
-* 🔒 **Sichere Dashboard-Links (Scoped Tokens):** Generiert minimale, streng auf die jeweilige Kamera beschränkte Stream-Links (`role: 'stream-viewer'`), die keinen Zugriff auf administrative Endpunkte gewähren.
-* ⏱️ **Auto-Logout nach Inaktivität:** Automatisches Abmelden nach 15 Minuten Inaktivität zum Schutz der Sitzung und zur Schonung von Server-Ressourcen.
-* 💾 **Persistente SQLite-Datenbank:** Speichert alle Konfigurationen dateibasiert und updatesicher in einem gemounteten Volume.
-* 🌓 **Modernes Bootstrap 5 Interface:** Responsives Webinterface mit umschaltbarem Light- und Dark-Mode.
+</div>
 
 ---
 
-## 🚀 Schnellstart
+## 📖 Overview
+
+**RTSP Stream Hub** ist eine leichtgewichtige, autarke und vollständig dockerisierte Webanwendung zur Verwaltung und On-the-Fly-Transcodierung von RTSP- und Webcam-Kamerastreams in browserkompatibles **MJPEG**. 
+
+Sie wurde speziell entwickelt, um moderne IP-Kameras (z. B. **Tapo, Reolink, Axis, Hikvision, Blink**) nahtlos, extrem latenzarm und ohne komplexe Streaming-Server-Infrastruktur in Webbrowser und SmartHome-Dashboards (wie **Neo Deck**, **Home Assistant** oder **MagicMirror**) einzubinden.
+
+```mermaid
+graph LR
+    subgraph Kameras ["📹 Videoquellen"]
+        A1[RTSP H.264 / H.265]
+        A2[ONVIF Kameras]
+        A3[HTTP/HTTPS Webcams]
+        A4[HLS .m3u8 Streams]
+    end
+
+    subgraph Hub ["⚡ RTSP Stream Hub"]
+        B[FFmpeg Engine<br/>+ Intel/AMD VAAPI GPU]
+        C[(SQLite DB<br/>Tokens & Config)]
+    end
+
+    subgraph Clients ["📱 Dashboards & Clients"]
+        D1[Neo Deck Dashboard]
+        D2[Home Assistant]
+        D3[Webbrowser / Smart TV]
+    end
+
+    Kameras -->|Stream Ingest| Hub
+    Hub -->|Low-Latency MJPEG| Clients
+```
+
+---
+
+## ✨ Features
+
+- 🔄 **Autarke RTSP-zu-MJPEG Transcodierung:** Nutzt eine optimierte, integrierte `ffmpeg`-Pipeline zur latenzarmen Konvertierung von RTSP (H.264/H.265) in flüssige MJPEG-Videoströme.
+- 🌐 **Multi-Protokoll-Unterstützung:** Verarbeitet neben RTSP auch direkte HTTP/HTTPS-Webcams, HLS `.m3u8`-Livestreams und statische JPEG-Snapshots mit konfigurierbarem Auto-Refresh.
+- ⚡ **GPU-Hardwarebeschleunigung (Intel/AMD VAAPI):** Automatische Erkennung und Nutzung von Intel-/AMD-Grafikeinheiten (`/dev/dri`) zur drastischen Entlastung der Host-CPU.
+- 📡 **ONVIF Auto-Discovery:** Durchsucht das lokale Subnetz auf Knopfdruck nach kompatiblen IP-Kameras mit 1-Klick-Übernahme aller Stream-Profile.
+- 👥 **Multi-User & Feingranulare Rechte:** Integriertes Admin-Panel zur Verwaltung von Benutzern mit getrennten Rollen (*Nur Ansehen*, *Kameras verwalten*, *Admin*).
+- 🔒 **Sichere Dashboard-Tokens (Scoped Links):** Generiert minimale, dauerhafte Stream-Tokens (`role: 'stream-viewer'`), die strikt auf eine einzelne Kamera isoliert sind und keinerlei Rechte im Hub besitzen.
+- ⏱️ **Auto-Logout nach Inaktivität:** Automatisches Abmelden der Administrationssitzung nach 15 Minuten Inaktivität zum Schutz der Endgeräte.
+- 💾 **Transaktionssichere SQLite-Datenbank:** Speichert alle Konfigurationen dateibasiert und updatesicher in einem persistenten Volume.
+- 🌓 **Modernes Bootstrap 5 UI:** Schnelles, responsives Webinterface mit umschaltbarem **Dark- & Light-Mode**.
+
+---
+
+## 🚀 Quick Start
 
 ### 1. Mit Docker Compose (Empfohlen)
 
-> ⚠️ **Sicherheitshinweis zur Einrichtung:**
-> Das Setzen der Umgebungsvariable `JWT_SECRET` ist **zwingend erforderlich**. Der Schlüssel muss mindestens **32 Zeichen** lang sein, andernfalls verweigert der Server aus Sicherheitsgründen den Start.
+> [!IMPORTANT]
+> **Sicherheitsschlüssel erforderlich:**
+> Die Umgebungsvariable `JWT_SECRET` muss mindestens **32 Zeichen** lang sein, andernfalls startet der Server zum Schutz deiner Kameras nicht.
 > 
-> Einen sicheren Schlüssel kannst du im Terminal generieren mit:
+> Generiere einen Schlüssel im Terminal:
 > ```bash
 > openssl rand -hex 32
 > # oder mit Node.js:
 > node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 > ```
 
-Erstelle eine `docker-compose.yml`:
+Erstelle eine Datei `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
-
 services:
   rtsp-stream-hub:
-    image: ghcr.io/daddelgreis74/rtsp-stream-hub:latest
+    image: daddelgreis74/rtsp-stream-hub:latest # oder: ghcr.io/daddelgreis74/rtsp-stream-hub:latest
     container_name: rtsp-stream-hub
     restart: unless-stopped
     ports:
@@ -53,82 +97,107 @@ services:
     volumes:
       - ./data:/usr/src/app/data
     devices:
-      - /dev/dri:/dev/dri  # Optional: Für GPU-Hardwarebeschleunigung
+      - /dev/dri:/dev/dri  # Optional: Für GPU-Hardwarebeschleunigung (Intel/AMD)
     environment:
       - PORT=8080
-      # ZWINGEND ERFORDERLICH: Mindestens 32 Zeichen langer individueller geheimer Schlüssel
-      - JWT_SECRET=hier_deinen_mit_openssl_generierten_32_byte_schluessel_eintragen
-      # - DISABLE_VAAPI=true # Optional: Einkommentieren, falls GPU-Beschleunigung deaktiviert werden soll
+      - JWT_SECRET=dein_mindestens_32_zeichen_langer_geheimer_schluessel
+      # - DISABLE_VAAPI=true # Optional: Setzen, falls keine GPU vorhanden ist / Fehler auftreten
 ```
 
-Starte den Container:
+Starte den Hub:
 ```bash
 docker compose up -d
 ```
 
 ---
 
-## 🎛️ Installation als Custom App auf TrueNAS SCALE
+### 2. Mit Docker CLI
 
-1. Öffne das TrueNAS Webinterface und gehe zu **Apps > Discover Apps > Custom App**.
+```bash
+docker run -d \
+  --name rtsp-stream-hub \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -v $(pwd)/data:/usr/src/app/data \
+  --device /dev/dri:/dev/dri \
+  -e JWT_SECRET="dein_mindestens_32_zeichen_langer_geheimer_schluessel" \
+  daddelgreis74/rtsp-stream-hub:latest
+```
+
+---
+
+## 🎛️ TrueNAS SCALE
+
+### Option A: Über den TrueNAS Community Catalog *(In Review)*
+1. Navigiere in TrueNAS SCALE zu **Apps > Discover Apps**.
+2. Suche nach **RTSP Stream Hub** und klicke auf **Install**.
+3. Gib dein `JWT_SECRET` an und wähle deinen Speicherpfad.
+
+### Option B: Als Custom App
+1. Gehe zu **Apps > Discover Apps > Custom App**.
 2. **Application Name:** `rtsp-stream-hub`
-3. **Image Repository:** `ghcr.io/daddelgreis74/rtsp-stream-hub`
-4. **Image Tag:** `latest` (oder z. B. `v1.1.1` für eine feste Version)
+3. **Image Repository:** `daddelgreis74/rtsp-stream-hub` (oder `ghcr.io/daddelgreis74/rtsp-stream-hub`)
+4. **Image Tag:** `latest` (oder z. B. `1.1.2`)
 5. **Environment Variables:**
-   * **Name:** `JWT_SECRET`
-   * **Value:** *(Dein generierter 32+ Zeichen langer Schlüssel, z. B. aus `openssl rand -hex 32`)*
-6. **Port Forwarding:** 
-   * Container Port: `8080`
-   * Host Port: `8085` (oder ein anderer freier Port)
-7. **Storage (Host Path für Datenbank):**
-   * **Host Path:** `/mnt/Datensicherung/rtsp-stream-hub`
-   * **Mount Path:** `/usr/src/app/data`
-8. **GPU Configuration (Hardwarebeschleunigung):**
-   * Aktiviere den Haken bei **Passthrough available (non-NVIDIA) GPUs** / weise 1 GPU zu.
-9. **Portal Configuration:**
-   * Port: `8085` (dein gewählter Host Port), Protokoll: `HTTP`, Pfad: `/`.
-10. Klicke auf **Save**.
+   - `JWT_SECRET`: *(Dein 32+ Zeichen langer Schlüssel)*
+6. **Port Forwarding:** `8080` (Container) $\rightarrow$ `30474` (oder freier Host-Port).
+7. **Storage:** Dataset auf Host mounten nach `/usr/src/app/data`.
+8. **GPU Passthrough:** Haken bei *Non-NVIDIA GPU Passthrough* setzen.
 
 ---
 
-## 🔐 Standard-Zugangsdaten
+## 🔐 Erstzugang & Standard-Login
 
-Beim allerersten Start legt das System automatisch ein Standard-Administratorkonto an:
+Beim ersten Start wird automatisch ein initialer Administrator angelegt:
 
-* **Benutzername:** `admin`
-* **Passwort:** `admin`
+| Feld | Standardwert |
+| :--- | :--- |
+| **Benutzername** | `admin` |
+| **Passwort** | `admin` |
 
-> ⚠️ **Wichtig:** Bitte ändere das Passwort sofort nach dem ersten Login im Menü **Benutzerverwaltung**!
+> [!WARNING]
+> Ändere das Passwort aus Sicherheitsgründen sofort nach dem ersten Login unter **Benutzerverwaltung**!
 
 ---
 
-## ⚙️ Umgebungsvariablen (Environment Variables)
+## ⚙️ Konfiguration (Environment Variables)
 
 | Variable | Erforderlich | Standardwert | Beschreibung |
-| :--- | :---: | :--- | :--- |
-| `JWT_SECRET` | **JA** | *Kein Default* | Kryptografischer Schlüssel (mind. 32 Zeichen) zum Signieren der Auth-Tokens. Verhindert unbefugte Token-Erstellung. |
-| `PORT` | Nein | `8080` | Interner Webserver-Port |
-| `DISABLE_VAAPI` | Nein | `false` | Auf `true` setzen, um Hardware-Beschleunigung zu deaktivieren und reine CPU-Decodierung zu erzwingen |
+| :--- | :---: | :---: | :--- |
+| `JWT_SECRET` | **JA** | — | Kryptografischer Schlüssel (mind. 32 Zeichen) zum Signieren aller Authentifizierungs- und Stream-Tokens. |
+| `PORT` | Nein | `8080` | Interner Webserver-Port des Containers. |
+| `DISABLE_VAAPI` | Nein | `false` | Auf `true` setzen, um GPU-Hardwarebeschleunigung vollständig zu deaktivieren (Software-FFmpeg). |
 
 ---
 
-## 📡 API Endpunkte
+## 📡 REST API & Stream-Endpunkte
 
-* `POST /api/auth/login` - Authentifizierung & JWT-Ausgabe
-* `GET /api/cameras` - Liste aller gespeicherten Kameras (erfordert Benutzer- oder Admin-Rolle)
-* `POST /api/cameras` - Neue Kamera hinzufügen (nur Benutzer mit Edit-Rechten)
-* `PUT /api/cameras/:id` - Kamera bearbeiten (nur Benutzer mit Edit-Rechten)
-* `DELETE /api/cameras/:id` - Kamera löschen (nur Benutzer mit Edit-Rechten)
-* `GET /api/cameras/discovery` - Startet den ONVIF-Netzwerk-Suchlauf
-* `GET /api/cameras/:id/token` - Erstellt ein permanentes Token, das strikt auf die angeforderte `camera_id` beschränkt ist (`role: 'stream-viewer'`)
-* `GET /api/streams/mjpeg/:id?token=...` - Liefert den Live-MJPEG-Videostrom (`multipart/x-mixed-replace`)
-* `GET /api/users` - Benutzerliste (nur Admin)
-* `POST /api/users` - Benutzer anlegen (nur Admin)
-* `PUT /api/users/:id/permissions` - Benutzerrechte anpassen (nur Admin)
-* `DELETE /api/users/:id` - Benutzer löschen (nur Admin)
+| Methode | Endpunkt | Berechtigung | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | Öffentlich | Authentifizierung & JWT-Token-Ausgabe |
+| `GET` | `/api/cameras` | User / Admin | Liste aller gespeicherten Kameras abrufen |
+| `POST` | `/api/cameras` | Editor / Admin | Neue Kamera anlegen |
+| `PUT` | `/api/cameras/:id` | Editor / Admin | Bestehende Kamera aktualisieren |
+| `DELETE` | `/api/cameras/:id` | Editor / Admin | Kamera entfernen |
+| `GET` | `/api/cameras/discovery` | Editor / Admin | Startet ONVIF-Netzwerk-Suchlauf |
+| `GET` | `/api/cameras/:id/token` | User / Admin | Erzeugt ein isoliertes, permanentes Stream-Token (`role: 'stream-viewer'`) |
+| `GET` | `/api/streams/mjpeg/:id?token=...` | Stream-Viewer | Liefert den Live-MJPEG-Videostrom (`multipart/x-mixed-replace`) |
+| `GET` | `/api/users` | Admin | Benutzerliste abrufen |
+| `POST` | `/api/users` | Admin | Neuen Benutzer erstellen |
+| `PUT` | `/api/users/:id/permissions` | Admin | Benutzerberechtigungen anpassen |
+| `DELETE` | `/api/users/:id` | Admin | Benutzerkonto löschen |
+
+---
+
+## 🛡️ Sicherheit & Scoped Tokens
+
+RTSP Stream Hub trennt strikt zwischen **Administrations-Tokens** und **Stream-Tokens**:
+- **Dashboard-Stream-Links** enthalten ein signiertes Token, das ausschließlich für den Endpunkt `/api/streams/mjpeg/:id` gültig ist.
+- Selbst wenn ein Token im Webinterface deines Dashboards (z. B. im HTML-Source) einsehbar ist, kann ein Angreifer damit weder andere Kameras einsehen noch Einstellungen oder Benutzer verändern.
 
 ---
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der [MIT Lizenz](LICENSE).
+Dieses Projekt steht unter der [MIT Lizenz](LICENSE).  
+Copyright (c) 2026 **Daddelgreis74**.
