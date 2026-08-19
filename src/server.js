@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'rtsp-stream-hub-secret-key-12345';
-const GO2RTC_URL = process.env.GO2RTC_URL || 'http://192.168.178.101:1984'; // Default to TrueNAS/Debian Go2RTC API
+const GO2RTC_URL = process.env.GO2RTC_URL || 'http://192.168.178.100:1984'; // Default to TrueNAS Go2RTC API
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
