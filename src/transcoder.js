@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 
 function startMjpegStream(rtspUrl, req, res) {
-  res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=--ffmpegboundary');
+  res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=ffmpeg');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -26,7 +26,12 @@ function startMjpegStream(rtspUrl, req, res) {
     console.log('GPU device /dev/dri/renderD128 exists but lacks read/write permissions. Using CPU decoding.');
   }
 
-  const ffmpegArgs = ['-rtsp_transport', 'tcp'];
+  const ffmpegArgs = [
+    '-rtsp_transport', 'tcp',
+    '-fflags', 'nobuffer',
+    '-flags', 'low_delay',
+    '-stimeout', '5000000'
+  ];
 
   if (useVaapi) {
     // Enable VAAPI decoding
@@ -48,6 +53,7 @@ function startMjpegStream(rtspUrl, req, res) {
     '-c:v', 'mjpeg',
     '-q:v', '4', // Quality scale (1-31, lower is better, 4 is a good compromise of CPU and quality)
     '-f', 'mpjpeg',
+    '-boundary_tag', 'ffmpeg',
     '-an', // Disable audio
     '-'
   );

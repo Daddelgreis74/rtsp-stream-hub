@@ -312,15 +312,12 @@ window.openPlayer = (id, name) => {
   el.playerModalTitle.textContent = name;
   el.playerModal.show();
   
-  el.playerStatus.textContent = 'Verbinde mit MJPEG-Transcoder...';
+  el.playerStatus.textContent = 'Live MJPEG Stream wird geladen...';
   el.mjpegImg.src = `/api/streams/mjpeg/${id}?token=${state.token}`;
   el.mjpegImg.classList.remove('d-none');
   
-  el.mjpegImg.onload = () => {
-    el.playerStatus.textContent = 'Verbunden (Live MJPEG)';
-  };
   el.mjpegImg.onerror = () => {
-    el.playerStatus.textContent = 'Transcodierungs-Fehler (Prüfe die RTSP URL)';
+    el.playerStatus.textContent = 'Transcodierungs-Fehler (Prüfe die RTSP URL oder Kamera-Erreichbarkeit)';
   };
 };
 
