@@ -460,12 +460,29 @@ window.deleteUser = async (id) => {
   }
 };
 
-// Copy Dashboard Link to Clipboard
+// Copy Dashboard Link to Clipboard (Supports HTTP and HTTPS)
 el.btnCopyDashboardLink.addEventListener('click', () => {
   el.dashboardLinkInput.select();
-  navigator.clipboard.writeText(el.dashboardLinkInput.value);
-  
-  // Visual feedback
+  el.dashboardLinkInput.setSelectionRange(0, 99999);
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(el.dashboardLinkInput.value).then(() => {
+      showCopySuccess();
+    }).catch(() => {
+      document.execCommand('copy');
+      showCopySuccess();
+    });
+  } else {
+    try {
+      document.execCommand('copy');
+      showCopySuccess();
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  }
+});
+
+function showCopySuccess() {
   const copyIcon = el.btnCopyDashboardLink.querySelector('i');
   copyIcon.className = 'fa-solid fa-check';
   el.btnCopyDashboardLink.classList.remove('btn-outline-success');
@@ -476,7 +493,7 @@ el.btnCopyDashboardLink.addEventListener('click', () => {
     el.btnCopyDashboardLink.classList.remove('btn-success');
     el.btnCopyDashboardLink.classList.add('btn-outline-success');
   }, 2000);
-});
+}
 
 // === ONVIF CAMERA DISCOVERY ===
 
