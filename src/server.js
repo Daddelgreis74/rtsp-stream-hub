@@ -243,6 +243,10 @@ app.get('/api/streams/mjpeg/:id', authenticateToken, (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`RTSP Stream Hub running on port ${PORT}`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`RTSP Stream Hub running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
