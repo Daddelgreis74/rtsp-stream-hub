@@ -65,6 +65,7 @@ jobs:
 
       - name: Update Docker Hub Description & README
         if: env.DOCKERHUB_TOKEN != ''
+        continue-on-error: true
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
