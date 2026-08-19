@@ -1,0 +1,17 @@
+{
+  "name": "rtsp-stream-hub",
+  "version": "1.0.0",
+  "description": "Centralized manager and hybrid proxy for RTSP camera streams",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.7",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0",
+    "ws": "^8.16.0"
+  }
+}

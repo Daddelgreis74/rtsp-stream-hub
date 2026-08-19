@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="de" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RTSP Stream Hub</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <link href="css/custom.css" rel="stylesheet">
+</head>
+<body class="bg-body-tertiary">
+
+  <!-- ================= LOGIN SECTION ================= -->
+  <div id="loginSection" class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
+      <div class="text-center mb-4">
+        <i class="fa-solid fa-video-camera fa-3x text-primary mb-2"></i>
+        <h3 class="fw-bold">RTSP Stream Hub</h3>
+        <p class="text-muted">Bitte melde dich an</p>
+      </div>
+      <form id="loginForm">
+        <div class="mb-3">
+          <label for="usernameInput" class="form-label">Benutzername</label>
+          <input type="text" class="form-control" id="usernameInput" required placeholder="z.B. admin">
+        </div>
+        <div class="mb-3">
+          <label for="passwordInput" class="form-label">Passwort</label>
+          <input type="password" class="form-control" id="passwordInput" required placeholder="••••••••">
+        </div>
+        <div class="alert alert-danger d-none" id="loginAlert"></div>
+        <button type="submit" class="btn btn-primary w-100 fw-bold">Einloggen</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MAIN SECTION ================= -->
+  <div id="mainSection" class="d-none">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg border-bottom shadow-sm bg-body-flat">
+      <div class="container">
+        <span class="navbar-brand fw-bold text-primary">
+          <i class="fa-solid fa-network-wired me-2"></i>RTSP Stream Hub
+        </span>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link active" id="btnCamerasView" href="#"><i class="fa-solid fa-camera me-1"></i>Kameras</a>
+            </li>
+            <li class="nav-item d-none" id="navAdminLink">
+              <a class="nav-link" id="btnAdminView" href="#"><i class="fa-solid fa-user-gear me-1"></i>Benutzerverwaltung</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-outline-secondary btn-sm" id="btnThemeToggle">
+              <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+            <span class="badge bg-primary px-3 py-2" id="userBadge">Benutzer</span>
+            <button class="btn btn-outline-danger btn-sm" id="btnLogoutBtn">
+              <i class="fa-solid fa-sign-out-alt me-1"></i>Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container py-4">
+
+      <!-- Cameras Page View -->
+      <div id="camerasPage">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="fw-bold mb-0">Meine Kameras</h2>
+          <button class="btn btn-success fw-bold d-none" id="btnAddCameraModalOpenBtn">
+            <i class="fa-solid fa-plus me-1"></i>Kamera hinzufügen
+          </button>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="cameraGrid">
+          <!-- Dynamically populated camera cards -->
+        </div>
+      </div>
+
+      <!-- User Management Page View -->
+      <div id="adminPage" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="fw-bold mb-0">Benutzerverwaltung</h2>
+          <button class="btn btn-primary fw-bold" id="btnAddUserModalOpenBtn">
+            <i class="fa-solid fa-user-plus me-1"></i>Benutzer erstellen
+          </button>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Benutzername</th>
+                  <th>Rolle</th>
+                  <th>Rechte: Kameras ansehen</th>
+                  <th>Rechte: Kameras bearbeiten</th>
+                  <th class="text-end">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                <!-- Dynamically populated user table rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Add/Edit Camera Modal -->
+  <div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cameraModalTitle">Kamera hinzufügen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="cameraForm">
+            <input type="hidden" id="cameraIdField">
+            <div class="mb-3">
+              <label for="cameraNameInput" class="form-label">Kameraname</label>
+              <input type="text" class="form-control" id="cameraNameInput" required placeholder="z.B. Garten TC60">
+            </div>
+            <div class="mb-3">
+              <label for="cameraUrlInput" class="form-label">RTSP Stream URL</label>
+              <input type="text" class="form-control" id="cameraUrlInput" required placeholder="rtsp://user:pass@ip:port/stream">
+              <div class="form-text">Unterstützt IP-Kameras mit H.264 RTSP Stream.</div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnSaveCamera">Speichern</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  <div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Neuen Benutzer erstellen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="userForm">
+            <div class="mb-3">
+              <label for="newUsernameInput" class="form-label">Benutzername</label>
+              <input type="text" class="form-control" id="newUsernameInput" required>
+            </div>
+            <div class="mb-3">
+              <label for="newPasswordInput" class="form-label">Passwort</label>
+              <input type="password" class="form-control" id="newPasswordInput" required>
+            </div>
+            <div class="mb-3">
+              <label for="newUserRole" class="form-label">Rolle</label>
+              <select class="form-select" id="newUserRole">
+                <option value="user">Standard Benutzer</option>
+                <option value="admin">Administrator</option>
+              </select>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="newUserView" checked>
+              <label class="form-check-label" for="newUserView">Kameras ansehen erlaubt</label>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="newUserEdit">
+              <label class="form-check-label" for="newUserEdit">Kameras bearbeiten erlaubt</label>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold">Erstellen</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stream Player Modal -->
+  <div class="modal fade" id="playerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="playerModalTitle">Kamera Stream</h5>
+          <button type="button" class="btn-close" id="btnStopStream" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0 bg-black d-flex align-items-center justify-content-center" style="aspect-ratio: 16/9;">
+          <!-- We offer dual playback mode: WebRTC or MJPEG -->
+          <div class="w-100 h-100 position-relative" id="playerContainer">
+            <video id="webrtcVideo" class="w-100 h-100 d-none" autoplay playsinline muted></video>
+            <img id="mjpegImg" class="w-100 h-100 d-none" style="object-fit: contain;">
+            
+            <div class="position-absolute bottom-0 start-0 p-3 bg-dark bg-opacity-75 text-white w-100 d-flex justify-content-between align-items-center">
+              <span id="playerStatus" class="small">Lade Stream...</span>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-light active" id="btnModeWebRTC">WebRTC (Ultra-low latency)</button>
+                <button class="btn btn-outline-light" id="btnModeMJPEG">MJPEG (FFmpeg Fallback)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/webrtc.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

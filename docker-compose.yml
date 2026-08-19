@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  rtsp-stream-hub:
+    build: .
+    container_name: rtsp-stream-hub
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/usr/src/app/data
+    restart: unless-stopped

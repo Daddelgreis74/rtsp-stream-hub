@@ -1,0 +1,20 @@
+/* Custom CSS Styles for RTSP Stream Hub */
+
+.bg-body-flat {
+  background-color: var(--bs-body-bg);
+}
+
+.camera-card-hover {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.camera-card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--bs-box-shadow-lg) !important;
+}
+
+#webrtcVideo, #mjpegImg {
+  background-color: #000;
+  max-height: 100%;
+  max-width: 100%;
+}
