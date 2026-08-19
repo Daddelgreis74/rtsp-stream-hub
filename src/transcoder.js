@@ -8,16 +8,37 @@ function startMjpegStream(rtspUrl, req, res) {
 
   console.log(`Starting FFmpeg stream for: ${rtspUrl}`);
 
-  // Spawn FFmpeg to read RTSP and output MJPEG to stdout
-  const ffmpegProcess = spawn('ffmpeg', [
-    '-rtsp_transport', 'tcp',
-    '-i', rtspUrl,
+  const fs = require('fs');
+  const useVaapi = fs.existsSync('/dev/dri');
+
+  const ffmpegArgs = ['-rtsp_transport', 'tcp'];
+
+  if (useVaapi) {
+    console.log('GPU device /dev/dri detected, enabling VAAPI hardware acceleration.');
+    // Enable VAAPI decoding
+    ffmpegArgs.push(
+      '-hwaccel', 'vaapi',
+      '-hwaccel_device', '/dev/dri/renderD128',
+      '-hwaccel_output_format', 'vaapi'
+    );
+  }
+
+  ffmpegArgs.push('-i', rtspUrl);
+
+  if (useVaapi) {
+    // Copy frames back to system memory for the software MJPEG encoder
+    ffmpegArgs.push('-vf', 'hwdownload,format=nv12');
+  }
+
+  ffmpegArgs.push(
     '-c:v', 'mjpeg',
     '-q:v', '4', // Quality scale (1-31, lower is better, 4 is a good compromise of CPU and quality)
     '-f', 'mpjpeg',
     '-an', // Disable audio
     '-'
-  ]);
+  );
+
+  const ffmpegProcess = spawn('ffmpeg', ffmpegArgs);
 
   ffmpegProcess.stdout.pipe(res);
 

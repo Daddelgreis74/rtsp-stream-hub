@@ -75,9 +75,14 @@
       <div id="camerasPage">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2 class="fw-bold mb-0">Meine Kameras</h2>
-          <button class="btn btn-success fw-bold d-none" id="btnAddCameraModalOpenBtn">
-            <i class="fa-solid fa-plus me-1"></i>Kamera hinzufügen
-          </button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary fw-bold d-none" id="btnDiscoverOpenBtn">
+              <i class="fa-solid fa-satellite-dish me-1"></i>ONVIF-Suche
+            </button>
+            <button class="btn btn-success fw-bold d-none" id="btnAddCameraModalOpenBtn">
+              <i class="fa-solid fa-plus me-1"></i>Kamera hinzufügen
+            </button>
+          </div>
         </div>
 
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="cameraGrid">
@@ -139,6 +144,16 @@
               <input type="text" class="form-control" id="cameraUrlInput" required placeholder="rtsp://user:pass@ip:port/stream">
               <div class="form-text">Unterstützt IP-Kameras mit H.264 RTSP Stream.</div>
             </div>
+            <div class="mb-3 d-none" id="dashboardLinkContainer">
+              <label class="form-label fw-bold text-success">Dashboard Stream Link (MJPEG)</label>
+              <div class="input-group">
+                <input type="text" class="form-control form-control-sm" id="dashboardLinkInput" readonly>
+                <button class="btn btn-outline-success btn-sm" type="button" id="btnCopyDashboardLink">
+                  <i class="fa-solid fa-copy"></i>
+                </button>
+              </div>
+              <div class="form-text">Dauerhafter Link für dein SmartHome-Dashboard (20 Jahre gültig).</div>
+            </div>
             <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnSaveCamera">Speichern</button>
           </form>
         </div>
@@ -181,6 +196,28 @@
             </div>
             <button type="submit" class="btn btn-primary w-100 fw-bold">Erstellen</button>
           </form>
+        </div>
+      </div>
+    </div>
+  <!-- ONVIF Discovery Modal -->
+  <div class="modal fade" id="discoveryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-satellite-dish me-2 text-primary"></i>ONVIF Kamera-Suchlauf</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted small">Scanner sucht nach Kameras im lokalen Netzwerk.</span>
+            <button class="btn btn-outline-primary btn-sm fw-bold" id="btnRunDiscovery">
+              <i class="fa-solid fa-rotate me-1"></i>Suchlauf starten
+            </button>
+          </div>
+          <div id="discoveryStatus" class="alert alert-info d-none">Suchlauf läuft... Bitte warten...</div>
+          <div class="list-group" id="discoveryResultsList">
+            <!-- Dynamically populated discovery results -->
+          </div>
         </div>
       </div>
     </div>

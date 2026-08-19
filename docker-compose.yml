@@ -8,4 +8,6 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/usr/src/app/data
+    devices:
+      - /dev/dri:/dev/dri
     restart: unless-stopped

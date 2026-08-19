@@ -28,6 +28,7 @@ const el = {
   adminPage: document.getElementById('adminPage'),
   
   cameraGrid: document.getElementById('cameraGrid'),
+  btnDiscoverOpenBtn: document.getElementById('btnDiscoverOpenBtn'),
   btnAddCameraModalOpenBtn: document.getElementById('btnAddCameraModalOpenBtn'),
   userTableBody: document.getElementById('userTableBody'),
   btnAddUserModalOpenBtn: document.getElementById('btnAddUserModalOpenBtn'),
@@ -38,6 +39,9 @@ const el = {
   cameraIdField: document.getElementById('cameraIdField'),
   cameraNameInput: document.getElementById('cameraNameInput'),
   cameraUrlInput: document.getElementById('cameraUrlInput'),
+  dashboardLinkContainer: document.getElementById('dashboardLinkContainer'),
+  dashboardLinkInput: document.getElementById('dashboardLinkInput'),
+  btnCopyDashboardLink: document.getElementById('btnCopyDashboardLink'),
   
   userModal: new bootstrap.Modal(document.getElementById('userModal')),
   userForm: document.getElementById('userForm'),
@@ -46,6 +50,11 @@ const el = {
   newUserRole: document.getElementById('newUserRole'),
   newUserView: document.getElementById('newUserView'),
   newUserEdit: document.getElementById('newUserEdit'),
+  
+  discoveryModal: new bootstrap.Modal(document.getElementById('discoveryModal')),
+  btnRunDiscovery: document.getElementById('btnRunDiscovery'),
+  discoveryStatus: document.getElementById('discoveryStatus'),
+  discoveryResultsList: document.getElementById('discoveryResultsList'),
   
   playerModal: new bootstrap.Modal(document.getElementById('playerModal')),
   playerModalTitle: document.getElementById('playerModalTitle'),
@@ -135,8 +144,10 @@ function initApp() {
 
   if (state.user.can_edit) {
     el.btnAddCameraModalOpenBtn.classList.remove('d-none');
+    el.btnDiscoverOpenBtn.classList.remove('d-none');
   } else {
     el.btnAddCameraModalOpenBtn.classList.add('d-none');
+    el.btnDiscoverOpenBtn.classList.add('d-none');
   }
 
   loadCameras();
@@ -221,16 +232,34 @@ function renderCameras(cameras) {
 el.btnAddCameraModalOpenBtn.addEventListener('click', () => {
   el.cameraForm.reset();
   el.cameraIdField.value = '';
+  el.dashboardLinkContainer.classList.add('d-none');
   el.cameraModalTitle.textContent = 'Kamera hinzufügen';
   el.cameraModal.show();
 });
 
 // Open Edit Camera Modal
-window.openEditCameraModal = (id, name, url) => {
+window.openEditCameraModal = async (id, name, url) => {
   el.cameraIdField.value = id;
   el.cameraNameInput.value = name;
   el.cameraUrlInput.value = url;
   el.cameraModalTitle.textContent = 'Kamera bearbeiten';
+  el.dashboardLinkContainer.classList.add('d-none');
+
+  try {
+    const res = await fetch(`/api/cameras/${id}/token`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      const portPart = window.location.port ? `:${window.location.port}` : '';
+      const streamUrl = `${window.location.protocol}//${window.location.hostname}${portPart}/api/streams/mjpeg/${id}?token=${data.token}`;
+      el.dashboardLinkInput.value = streamUrl;
+      el.dashboardLinkContainer.classList.remove('d-none');
+    }
+  } catch (err) {
+    console.error('Failed to load dashboard token:', err);
+  }
+
   el.cameraModal.show();
 };
 
@@ -459,6 +488,103 @@ window.deleteUser = async (id) => {
   } catch (err) {
     alert(err.message);
   }
+};
+
+// Copy Dashboard Link to Clipboard
+el.btnCopyDashboardLink.addEventListener('click', () => {
+  el.dashboardLinkInput.select();
+  navigator.clipboard.writeText(el.dashboardLinkInput.value);
+  
+  // Visual feedback
+  const copyIcon = el.btnCopyDashboardLink.querySelector('i');
+  copyIcon.className = 'fa-solid fa-check';
+  el.btnCopyDashboardLink.classList.remove('btn-outline-success');
+  el.btnCopyDashboardLink.classList.add('btn-success');
+  
+  setTimeout(() => {
+    copyIcon.className = 'fa-solid fa-copy';
+    el.btnCopyDashboardLink.classList.remove('btn-success');
+    el.btnCopyDashboardLink.classList.add('btn-outline-success');
+  }, 2000);
+});
+
+// === ONVIF CAMERA DISCOVERY ===
+
+el.btnDiscoverOpenBtn.addEventListener('click', () => {
+  el.discoveryResultsList.innerHTML = '<div class="text-center p-4 text-muted">Klicke auf "Suchlauf starten", um nach ONVIF Kameras im Netzwerk zu scannen.</div>';
+  el.discoveryStatus.classList.add('d-none');
+  el.discoveryModal.show();
+});
+
+el.btnRunDiscovery.addEventListener('click', async () => {
+  el.discoveryStatus.textContent = 'Netzwerk-Suchlauf läuft... Bitte warten...';
+  el.discoveryStatus.classList.remove('d-none');
+  el.discoveryResultsList.innerHTML = '';
+  el.btnRunDiscovery.disabled = true;
+
+  try {
+    const res = await fetch('/api/cameras/discovery', {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Suchlauf fehlgeschlagen');
+    }
+    
+    const devices = await res.json();
+    el.discoveryStatus.classList.add('d-none');
+    renderDiscoveryResults(devices);
+  } catch (err) {
+    el.discoveryStatus.textContent = `Fehler: ${err.message}`;
+    el.discoveryStatus.classList.remove('d-none');
+    el.discoveryStatus.className = 'alert alert-danger';
+  } finally {
+    el.btnRunDiscovery.disabled = false;
+  }
+});
+
+function renderDiscoveryResults(devices) {
+  el.discoveryResultsList.innerHTML = '';
+  
+  if (devices.length === 0) {
+    el.discoveryResultsList.innerHTML = '<div class="text-center p-4 text-warning"><i class="fa-solid fa-circle-exclamation fa-2x mb-2"></i><br>Keine ONVIF Kameras im Netzwerk gefunden.</div>';
+    return;
+  }
+  
+  devices.forEach(d => {
+    const item = document.createElement('div');
+    item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3';
+    
+    // We try to locate IP address
+    const ip = d.address || (d.xaddrs && d.xaddrs[0] ? new URL(d.xaddrs[0]).hostname : '');
+    const model = d.hardware || d.name || 'Unbekannte Kamera';
+    
+    item.innerHTML = `
+      <div>
+        <h6 class="fw-bold mb-1"><i class="fa-solid fa-microchip text-primary me-2"></i>${model}</h6>
+        <span class="badge bg-secondary mb-1">IP: ${ip}</span>
+        <div class="text-muted small">Location: ${d.location || 'Keine Angabe'}</div>
+      </div>
+      <button class="btn btn-primary btn-sm fw-bold" onclick="selectDiscoveredCamera('${model}', '${ip}')">
+        <i class="fa-solid fa-plus me-1"></i>Hinzufügen
+      </button>
+    `;
+    el.discoveryResultsList.appendChild(item);
+  });
+}
+
+window.selectDiscoveredCamera = (model, ip) => {
+  el.discoveryModal.hide();
+  
+  // Prefill the Camera Add form
+  el.cameraForm.reset();
+  el.cameraIdField.value = '';
+  el.dashboardLinkContainer.classList.add('d-none');
+  el.cameraNameInput.value = `${model}`;
+  el.cameraUrlInput.value = `rtsp://admin:passwort@${ip}:554/ch0`;
+  el.cameraModalTitle.textContent = 'Kamera hinzufügen';
+  el.cameraModal.show();
 };
 
 // Init application

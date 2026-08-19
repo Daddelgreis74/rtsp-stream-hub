@@ -189,6 +189,44 @@ app.delete('/api/cameras/:id', authenticateToken, (req, res) => {
   });
 });
 
+// ONVIF Camera Discovery API
+app.get('/api/cameras/discovery', authenticateToken, (req, res) => {
+  if (req.user.can_edit !== 1) {
+    return res.status(403).json({ error: 'No permission to discover cameras' });
+  }
+
+  const onvif = require('node-onvif');
+  console.log('Starting ONVIF network probe...');
+  onvif.startProbe().then((device_info_list) => {
+    res.json(device_info_list);
+  }).catch((err) => {
+    console.error('ONVIF Probe failed:', err.message);
+    res.status(500).json({ error: `Suchlauf fehlgeschlagen: ${err.message}` });
+  });
+});
+
+// Generate Permanent JWT Token for Dashboard Camera Stream
+app.get('/api/cameras/:id/token', authenticateToken, (req, res) => {
+  if (req.user.can_view !== 1) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  db.get('SELECT * FROM cameras WHERE id = ?', [req.params.id], (err, row) => {
+    if (err || !row) {
+      return res.status(404).json({ error: 'Camera not found' });
+    }
+
+    // Generate a long-lived token (20 years)
+    const token = jwt.sign(
+      { id: req.user.id, username: req.user.username, role: req.user.role, can_view: 1, can_edit: 0 },
+      JWT_SECRET,
+      { expiresIn: '7300d' } // ~20 years
+    );
+
+    res.json({ token });
+  });
+});
+
 // === STREAMING PROXY API ===
 
 // HTTP MJPEG Stream Route (Transcoding fallback)
