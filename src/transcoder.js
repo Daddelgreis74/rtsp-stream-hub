@@ -29,8 +29,7 @@ function startMjpegStream(rtspUrl, req, res) {
   const ffmpegArgs = [
     '-rtsp_transport', 'tcp',
     '-fflags', 'nobuffer',
-    '-flags', 'low_delay',
-    '-stimeout', '5000000'
+    '-flags', 'low_delay'
   ];
 
   if (useVaapi) {
