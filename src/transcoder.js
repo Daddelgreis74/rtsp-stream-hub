@@ -13,7 +13,9 @@ function startMjpegStream(rtspUrl, req, res) {
 
   // Check if VAAPI device exists AND is readable/writable by the current user
   try {
-    if (fs.existsSync('/dev/dri/renderD128')) {
+    if (process.env.DISABLE_VAAPI === 'true') {
+      console.log('VAAPI hardware acceleration disabled via DISABLE_VAAPI env variable. Using CPU decoding.');
+    } else if (fs.existsSync('/dev/dri/renderD128')) {
       fs.accessSync('/dev/dri/renderD128', fs.constants.R_OK | fs.constants.W_OK);
       useVaapi = true;
       console.log('VAAPI device /dev/dri/renderD128 is accessible. Enabling hardware acceleration.');
