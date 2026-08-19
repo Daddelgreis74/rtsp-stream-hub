@@ -62,3 +62,15 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Update Docker Hub Description & README
+        if: env.DOCKERHUB_TOKEN != ''
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: daddelgreis74/rtsp-stream-hub
+          short-description: "Lightweight RTSP & Webcam to MJPEG Transcoding Hub with ONVIF & VAAPI GPU support."
+          readme-filepath: ./README.md
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
