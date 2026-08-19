@@ -1,12 +1,37 @@
 const { spawn } = require('child_process');
+const http = require('http');
+const https = require('https');
 
-function startMjpegStream(rtspUrl, req, res) {
+function startMjpegStream(cameraUrl, req, res) {
+  // If it's already an HTTP/HTTPS stream (e.g. Axis MJPEG camera stream), proxy directly!
+  if (/^https?:\/\//i.test(cameraUrl)) {
+    console.log(`Proxying HTTP/HTTPS stream directly: ${cameraUrl}`);
+    const client = cameraUrl.startsWith('https://') ? https : http;
+    const proxyReq = client.get(cameraUrl, { rejectUnauthorized: false }, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+      console.error(`HTTP Stream Proxy Error: ${err.message}`);
+      if (!res.headersSent) {
+        res.status(500).send('Streaming error');
+      }
+    });
+
+    req.on('close', () => {
+      console.log('Client disconnected from HTTP proxy stream');
+      proxyReq.destroy();
+    });
+    return;
+  }
+
   res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=ffmpeg');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  console.log(`Starting FFmpeg stream for: ${rtspUrl}`);
+  console.log(`Starting FFmpeg RTSP stream for: ${cameraUrl}`);
 
   const fs = require('fs');
   let useVaapi = false;
@@ -41,7 +66,7 @@ function startMjpegStream(rtspUrl, req, res) {
     );
   }
 
-  ffmpegArgs.push('-i', rtspUrl);
+  ffmpegArgs.push('-i', cameraUrl);
 
   if (useVaapi) {
     // Copy frames back to system memory for the software MJPEG encoder
