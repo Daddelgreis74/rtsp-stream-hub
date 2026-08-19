@@ -11,7 +11,6 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'rtsp-stream-hub-secret-key-12345';
-const GO2RTC_URL = process.env.GO2RTC_URL || 'http://192.168.178.100:1984'; // Default to TrueNAS Go2RTC API
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
@@ -241,47 +240,6 @@ app.get('/api/streams/mjpeg/:id', authenticateToken, (req, res) => {
     }
     // Launch FFmpeg transcoder
     startMjpegStream(row.url, req, res);
-  });
-});
-
-// WebRTC Signaling Proxy Route (for Go2RTC)
-app.post('/api/streams/webrtc/:id', authenticateToken, async (req, res) => {
-  if (req.user.can_view !== 1) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  db.get('SELECT url FROM cameras WHERE id = ?', [req.params.id], async (err, row) => {
-    if (err || !row) {
-      return res.status(404).json({ error: 'Camera not found' });
-    }
-
-    try {
-      const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-      
-      // We send the SDP offer to the local go2rtc server
-      // go2rtc requires the camera RTSP url to be defined or we can register it dynamically
-      // For simplicity, we can pass the URL directly as a source parameter or register it!
-      const go2rtcSignalingUrl = `${GO2RTC_URL}/api/whip?src=${encodeURIComponent(row.url)}`;
-      
-      const response = await fetch(go2rtcSignalingUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/sdp',
-        },
-        body: req.body.sdp
-      });
-
-      if (!response.ok) {
-        const details = await response.text();
-        return res.status(response.status).json({ error: `Go2RTC error: ${details}` });
-      }
-
-      const answerSdp = await response.text();
-      res.send(answerSdp);
-    } catch (fetchErr) {
-      console.error('Go2RTC proxy connection failed:', fetchErr.message);
-      res.status(502).json({ error: 'Go2RTC stream proxy unavailable' });
-    }
   });
 });
 

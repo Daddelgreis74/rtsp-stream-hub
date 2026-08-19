@@ -11,8 +11,6 @@
     "sqlite3": "^5.1.7",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "node-fetch": "^2.7.0",
-    "node-onvif": "^0.1.7",
-    "ws": "^8.16.0"
+    "node-onvif": "^0.1.7"
   }
 }

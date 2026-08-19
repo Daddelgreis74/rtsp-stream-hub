@@ -58,12 +58,9 @@ const el = {
   
   playerModal: new bootstrap.Modal(document.getElementById('playerModal')),
   playerModalTitle: document.getElementById('playerModalTitle'),
-  webrtcVideo: document.getElementById('webrtcVideo'),
   mjpegImg: document.getElementById('mjpegImg'),
   playerStatus: document.getElementById('playerStatus'),
-  btnStopStream: document.getElementById('btnStopStream'),
-  btnModeWebRTC: document.getElementById('btnModeWebRTC'),
-  btnModeMJPEG: document.getElementById('btnModeMJPEG')
+  btnStopStream: document.getElementById('btnStopStream')
 };
 
 // Theme Toggle
@@ -315,46 +312,22 @@ window.openPlayer = (id, name) => {
   el.playerModalTitle.textContent = name;
   el.playerModal.show();
   
-  // Start with default WebRTC
-  switchPlaybackMode('webrtc');
+  el.playerStatus.textContent = 'Verbinde mit MJPEG-Transcoder...';
+  el.mjpegImg.src = `/api/streams/mjpeg/${id}?token=${state.token}`;
+  el.mjpegImg.classList.remove('d-none');
+  
+  el.mjpegImg.onload = () => {
+    el.playerStatus.textContent = 'Verbunden (Live MJPEG)';
+  };
+  el.mjpegImg.onerror = () => {
+    el.playerStatus.textContent = 'Transcodierungs-Fehler (Prüfe die RTSP URL)';
+  };
 };
 
-function switchPlaybackMode(mode) {
-  state.playbackMode = mode;
-  stopPlayback();
-
-  if (mode === 'webrtc') {
-    el.btnModeWebRTC.classList.add('active');
-    el.btnModeMJPEG.classList.remove('active');
-    playWebRTC(state.activeCameraId, el.webrtcVideo, el.playerStatus, state.token);
-  } else {
-    el.btnModeWebRTC.classList.remove('active');
-    el.btnModeMJPEG.classList.add('active');
-    
-    el.playerStatus.textContent = 'Verbinde mit MJPEG-Transcoder...';
-    el.mjpegImg.src = `/api/streams/mjpeg/${state.activeCameraId}?token=${state.token}`;
-    el.mjpegImg.classList.remove('d-none');
-    
-    el.mjpegImg.onload = () => {
-      el.playerStatus.textContent = 'Verbunden (Live MJPEG)';
-    };
-    el.mjpegImg.onerror = () => {
-      el.playerStatus.textContent = 'Transcodierungs-Fehler (Prüfe die RTSP URL)';
-    };
-  }
-}
-
 function stopPlayback() {
-  stopWebRTC();
-  el.webrtcVideo.srcObject = null;
-  el.webrtcVideo.classList.add('d-none');
-  
   el.mjpegImg.src = '';
   el.mjpegImg.classList.add('d-none');
 }
-
-el.btnModeWebRTC.addEventListener('click', () => switchPlaybackMode('webrtc'));
-el.btnModeMJPEG.addEventListener('click', () => switchPlaybackMode('mjpeg'));
 
 document.getElementById('playerModal').addEventListener('hidden.bs.modal', () => {
   stopPlayback();
