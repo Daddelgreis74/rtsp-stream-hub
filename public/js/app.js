@@ -73,6 +73,25 @@ function escapeHtml(str) {
   });
 }
 
+// Helper for Authenticated Fetch with auto-logout on invalid or expired token
+async function authFetch(url, options = {}) {
+  options.headers = options.headers || {};
+  if (state.token) {
+    options.headers['Authorization'] = `Bearer ${state.token}`;
+  }
+  const res = await fetch(url, options);
+  if (res.status === 401 || res.status === 403) {
+    const cloned = res.clone();
+    try {
+      const data = await cloned.json();
+      if (data.error && (data.error.includes('token') || data.error.includes('expired') || data.error.includes('missing') || data.error.includes('Invalid'))) {
+        logout(false);
+      }
+    } catch (e) {}
+  }
+  return res;
+}
+
 // === INACTIVITY AUTO-LOGOUT (15 Minutes) ===
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
 let inactivityTimer = null;
@@ -99,6 +118,9 @@ function logout(dueToInactivity = false) {
 
   stopPlayback();
   el.playerModal.hide();
+  el.cameraModal.hide();
+  el.userModal.hide();
+  el.discoveryModal.hide();
 
   el.loginSection.classList.remove('d-none');
   el.mainSection.classList.add('d-none');
@@ -234,9 +256,8 @@ async function loadCameras() {
   }
 
   try {
-    const res = await fetch('/api/cameras', {
-      headers: { 'Authorization': `Bearer ${state.token}` }
-    });
+    const res = await authFetch('/api/cameras');
+    if (!res.ok) return;
     const cameras = await res.json();
     renderCameras(cameras);
   } catch (err) {
@@ -322,15 +343,15 @@ window.openEditCameraModal = async (id, name, url, streamType = 'auto', refreshI
   el.dashboardLinkContainer.classList.add('d-none');
 
   try {
-    const res = await fetch(`/api/cameras/${id}/token`, {
-      headers: { 'Authorization': `Bearer ${state.token}` }
-    });
-    const data = await res.json();
-    if (res.ok && data.token) {
-      const portPart = window.location.port ? `:${window.location.port}` : '';
-      const streamUrl = `${window.location.protocol}//${window.location.hostname}${portPart}/api/streams/mjpeg/${id}?token=${data.token}`;
-      el.dashboardLinkInput.value = streamUrl;
-      el.dashboardLinkContainer.classList.remove('d-none');
+    const res = await authFetch(`/api/cameras/${id}/token`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.token) {
+        const portPart = window.location.port ? `:${window.location.port}` : '';
+        const streamUrl = `${window.location.protocol}//${window.location.hostname}${portPart}/api/streams/mjpeg/${id}?token=${data.token}`;
+        el.dashboardLinkInput.value = streamUrl;
+        el.dashboardLinkContainer.classList.remove('d-none');
+      }
     }
   } catch (err) {
     console.error('Failed to load dashboard token:', err);
@@ -352,11 +373,10 @@ el.cameraForm.addEventListener('submit', async (e) => {
   const apiPath = id ? `/api/cameras/${id}` : '/api/cameras';
 
   try {
-    const res = await fetch(apiPath, {
+    const res = await authFetch(apiPath, {
       method,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ name, url, stream_type, refresh_interval })
     });
@@ -375,9 +395,8 @@ el.cameraForm.addEventListener('submit', async (e) => {
 window.deleteCamera = async (id) => {
   if (!confirm('Möchtest du diese Kamera wirklich löschen?')) return;
   try {
-    const res = await fetch(`/api/cameras/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${state.token}` }
+    const res = await authFetch(`/api/cameras/${id}`, {
+      method: 'DELETE'
     });
     if (!res.ok) throw new Error('Löschen fehlgeschlagen');
     loadCameras();
@@ -415,9 +434,8 @@ document.getElementById('playerModal').addEventListener('hidden.bs.modal', () =>
 
 async function loadUsers() {
   try {
-    const res = await fetch('/api/users', {
-      headers: { 'Authorization': `Bearer ${state.token}` }
-    });
+    const res = await authFetch('/api/users');
+    if (!res.ok) return;
     const users = await res.json();
     renderUsers(users);
   } catch (err) {
@@ -475,11 +493,10 @@ el.userForm.addEventListener('submit', async (e) => {
   const can_edit = el.newUserEdit.checked;
 
   try {
-    const res = await fetch('/api/users', {
+    const res = await authFetch('/api/users', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ username, password, role, can_view, can_edit })
     });
@@ -497,9 +514,8 @@ el.userForm.addEventListener('submit', async (e) => {
 // Update User Permissions
 window.updateUserPermissions = async (id, newRole = null, newCanView = null, newCanEdit = null) => {
   try {
-    const resList = await fetch('/api/users', {
-      headers: { 'Authorization': `Bearer ${state.token}` }
-    });
+    const resList = await authFetch('/api/users');
+    if (!resList.ok) return;
     const users = await resList.json();
     const targetUser = users.find(u => u.id === id);
     if (!targetUser) return;
@@ -508,11 +524,10 @@ window.updateUserPermissions = async (id, newRole = null, newCanView = null, new
     const can_view = newCanView !== null ? newCanView : targetUser.can_view;
     const can_edit = newCanEdit !== null ? newCanEdit : targetUser.can_edit;
 
-    const res = await fetch(`/api/users/${id}/permissions`, {
+    const res = await authFetch(`/api/users/${id}/permissions`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ role, can_view, can_edit })
     });
@@ -527,9 +542,8 @@ window.updateUserPermissions = async (id, newRole = null, newCanView = null, new
 window.deleteUser = async (id) => {
   if (!confirm('Möchtest du diesen Benutzer wirklich löschen?')) return;
   try {
-    const res = await fetch(`/api/users/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${state.token}` }
+    const res = await authFetch(`/api/users/${id}`, {
+      method: 'DELETE'
     });
     if (!res.ok) throw new Error('Löschen fehlgeschlagen');
     loadUsers();
@@ -588,10 +602,7 @@ el.btnRunDiscovery.addEventListener('click', async () => {
   el.btnRunDiscovery.disabled = true;
 
   try {
-    const res = await fetch('/api/cameras/discovery', {
-      headers: { 'Authorization': `Bearer ${state.token}` }
-    });
-    
+    const res = await authFetch('/api/cameras/discovery');
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.error || 'Suchlauf fehlgeschlagen');
