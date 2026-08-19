@@ -10,7 +10,16 @@ const app = express();
 const server = http.createServer(app);
 
 const PORT = process.env.PORT || 8080;
-const JWT_SECRET = process.env.JWT_SECRET || 'rtsp-stream-hub-secret-key-12345';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error('\n================================================================');
+  console.error('FATAL ERROR: Environment variable JWT_SECRET is missing or too short.');
+  console.error('JWT_SECRET must be at least 32 characters long for security.');
+  console.error('Example generation: openssl rand -hex 32');
+  console.error('================================================================\n');
+  process.exit(1);
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
@@ -140,7 +149,7 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
 
 // List cameras
 app.get('/api/cameras', authenticateToken, (req, res) => {
-  if (req.user.can_view !== 1) {
+  if (req.user.role === 'stream-viewer' || req.user.can_view !== 1) {
     return res.status(403).json({ error: 'No permission to view cameras' });
   }
   db.all('SELECT * FROM cameras', [], (err, rows) => {
@@ -218,20 +227,27 @@ app.get('/api/cameras/discovery', authenticateToken, (req, res) => {
   });
 });
 
-// Generate Permanent JWT Token for Dashboard Camera Stream
+// Generate Permanent JWT Token for Dashboard Camera Stream (Strictly scoped to camera ID with minimal stream-viewer role)
 app.get('/api/cameras/:id/token', authenticateToken, (req, res) => {
-  if (req.user.can_view !== 1) {
+  if (req.user.role === 'stream-viewer' || req.user.can_view !== 1) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
-  db.get('SELECT * FROM cameras WHERE id = ?', [req.params.id], (err, row) => {
+  const cameraId = parseInt(req.params.id, 10);
+
+  db.get('SELECT * FROM cameras WHERE id = ?', [cameraId], (err, row) => {
     if (err || !row) {
       return res.status(404).json({ error: 'Camera not found' });
     }
 
-    // Generate a long-lived token (20 years)
+    // Generate a long-lived token (20 years) with minimal permissions, scoped strictly to this camera ID
     const token = jwt.sign(
-      { id: req.user.id, username: req.user.username, role: req.user.role, can_view: 1, can_edit: 0 },
+      {
+        role: 'stream-viewer',
+        scoped_camera_id: cameraId,
+        can_view: 1,
+        can_edit: 0
+      },
       JWT_SECRET,
       { expiresIn: '7300d' } // ~20 years
     );
@@ -242,13 +258,22 @@ app.get('/api/cameras/:id/token', authenticateToken, (req, res) => {
 
 // === STREAMING PROXY API ===
 
-// HTTP MJPEG Stream Route (Transcoding fallback)
+// HTTP MJPEG Stream Route
 app.get('/api/streams/mjpeg/:id', authenticateToken, (req, res) => {
   if (req.user.can_view !== 1) {
     return res.status(403).send('Forbidden');
   }
 
-  db.get('SELECT * FROM cameras WHERE id = ?', [req.params.id], (err, row) => {
+  const requestedCameraId = parseInt(req.params.id, 10);
+
+  // If token is a scoped stream-viewer token, verify that it matches the requested camera ID
+  if (req.user.role === 'stream-viewer') {
+    if (req.user.scoped_camera_id !== requestedCameraId) {
+      return res.status(403).send('Forbidden: Token not authorized for this camera');
+    }
+  }
+
+  db.get('SELECT * FROM cameras WHERE id = ?', [requestedCameraId], (err, row) => {
     if (err || !row) {
       return res.status(404).send('Camera not found');
     }

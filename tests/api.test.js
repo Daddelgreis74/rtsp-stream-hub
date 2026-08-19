@@ -1,6 +1,9 @@
+process.env.JWT_SECRET = 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90';
+
 const test = require('node:test');
 const assert = require('node:assert');
 const http = require('http');
+const jwt = require('jsonwebtoken');
 const app = require('../src/server');
 const { resolveStreamType } = require('../src/transcoder');
 
@@ -49,4 +52,29 @@ test('Stream Type Resolver - Auto detects RTSP, MJPEG, HLS, Snapshot', () => {
   assert.strictEqual(resolveStreamType('https://domain.com/cam.jpg', 'auto'), 'snapshot');
   assert.strictEqual(resolveStreamType('http://192.168.1.10/mjpg/video.cgi', 'auto'), 'mjpeg');
   assert.strictEqual(resolveStreamType('http://192.168.1.10/stream', 'snapshot'), 'snapshot');
+});
+
+test('Security - Scoped stream-viewer token restrictions', async () => {
+  // Create a token scoped strictly to Camera 1 as stream-viewer
+  const scopedToken = jwt.sign(
+    { role: 'stream-viewer', scoped_camera_id: 1, can_view: 1, can_edit: 0 },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  // 1. stream-viewer must be rejected when attempting to access admin user management (/api/users)
+  const resUsers = await fetch(`${baseUrl}/api/users`, {
+    headers: { 'Authorization': `Bearer ${scopedToken}` }
+  });
+  assert.strictEqual(resUsers.status, 403);
+
+  // 2. stream-viewer must be rejected when attempting to list cameras (/api/cameras)
+  const resCameras = await fetch(`${baseUrl}/api/cameras`, {
+    headers: { 'Authorization': `Bearer ${scopedToken}` }
+  });
+  assert.strictEqual(resCameras.status, 403);
+
+  // 3. stream-viewer must be rejected when attempting to access a different camera ID (/api/streams/mjpeg/2)
+  const resWrongCam = await fetch(`${baseUrl}/api/streams/mjpeg/2?token=${scopedToken}`);
+  assert.strictEqual(resWrongCam.status, 403);
 });
