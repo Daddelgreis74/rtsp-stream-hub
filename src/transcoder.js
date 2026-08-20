@@ -76,8 +76,7 @@ function startMjpegStream(camera, req, res) {
 
   const streamKey = `${cameraId}_${cameraUrl}`;
 
-  // Common response headers for MJPEG streaming
-  res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=ffmpeg');
+  // Common response cache & connection headers
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -85,6 +84,11 @@ function startMjpegStream(camera, req, res) {
   // === MULTIPLEXING: Attach to existing active session if one exists ===
   if (activeSessions.has(streamKey)) {
     const session = activeSessions.get(streamKey);
+    if (session.contentType) {
+      res.setHeader('Content-Type', session.contentType);
+    } else {
+      res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=ffmpeg');
+    }
     session.clients.add(res);
     console.log(`[Stream Multiplexer] Added viewer to "${camera.name || streamKey}" (Active viewers: ${session.clients.size})`);
 
@@ -104,6 +108,7 @@ function startMjpegStream(camera, req, res) {
     key: streamKey,
     type: streamType,
     clients: new Set([res]),
+    contentType: null,
     process: null,
     intervalId: null,
     proxyReq: null
@@ -123,6 +128,17 @@ function startMjpegStream(camera, req, res) {
   if (streamType === 'mjpeg') {
     const client = cameraUrl.startsWith('https://') ? https : http;
     const proxyReq = client.get(cameraUrl, { rejectUnauthorized: false }, (proxyRes) => {
+      const upstreamContentType = proxyRes.headers['content-type'] || 'multipart/x-mixed-replace; boundary=--myboundary';
+      session.contentType = upstreamContentType;
+
+      for (const c of session.clients) {
+        try {
+          if (!c.headersSent) {
+            c.setHeader('Content-Type', upstreamContentType);
+          }
+        } catch (e) {}
+      }
+
       proxyRes.on('data', (chunk) => {
         for (const c of session.clients) {
           try { c.write(chunk); } catch (e) {}
@@ -147,6 +163,10 @@ function startMjpegStream(camera, req, res) {
 
   // === 2. JPEG / PNG SNAPSHOT POLLER LOOP ===
   if (streamType === 'snapshot') {
+    const defaultBoundary = 'ffmpeg';
+    session.contentType = `multipart/x-mixed-replace; boundary=${defaultBoundary}`;
+    res.setHeader('Content-Type', session.contentType);
+
     const client = cameraUrl.startsWith('https://') ? https : http;
     let isClosed = false;
 
@@ -165,7 +185,7 @@ function startMjpegStream(camera, req, res) {
         snapRes.on('end', () => {
           if (isClosed || session.clients.size === 0) return;
           const imageBuffer = Buffer.concat(chunks);
-          const header = `--ffmpeg\r\nContent-Type: image/jpeg\r\nContent-Length: ${imageBuffer.length}\r\n\r\n`;
+          const header = `--${defaultBoundary}\r\nContent-Type: image/jpeg\r\nContent-Length: ${imageBuffer.length}\r\n\r\n`;
 
           for (const c of session.clients) {
             try {
@@ -189,6 +209,10 @@ function startMjpegStream(camera, req, res) {
   }
 
   // === 3. RTSP OR HLS VIA FFMPEG TRANSCODER ===
+  const defaultBoundary = 'ffmpeg';
+  session.contentType = `multipart/x-mixed-replace; boundary=${defaultBoundary}`;
+  res.setHeader('Content-Type', session.contentType);
+
   let useVaapi = false;
   try {
     if (process.env.DISABLE_VAAPI === 'true') {
@@ -232,7 +256,7 @@ function startMjpegStream(camera, req, res) {
     '-c:v', 'mjpeg',
     '-q:v', '4',
     '-f', 'mpjpeg',
-    '-boundary_tag', 'ffmpeg',
+    '-boundary_tag', defaultBoundary,
     '-an',
     '-'
   );
