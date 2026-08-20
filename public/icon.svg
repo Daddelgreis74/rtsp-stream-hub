@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+
+    <!-- Accent Gradient -->
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+
+    <!-- Lens Flare / Glow -->
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Signal Gradient -->
+    <linearGradient id="signalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <!-- Filter for soft shadow / glow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0284c7" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded App Tile Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+
+  <!-- Streaming Wave Signal (Top-Right) -->
+  <g filter="url(#glow)">
+    <path d="M 370 140 A 65 65 0 0 1 420 200" fill="none" stroke="url(#signalGrad)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 395 115 A 100 100 0 0 1 460 200" fill="none" stroke="url(#signalGrad)" stroke-width="14" stroke-linecap="round" opacity="0.65"/>
+  </g>
+
+  <!-- Camera Body Group -->
+  <g filter="url(#glow)">
+    <!-- Base Mounting Bracket -->
+    <path d="M 120 330 L 170 330 L 210 280 L 160 280 Z" fill="#334155"/>
+    <rect x="95" y="320" width="45" height="70" rx="8" fill="#1e293b" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+    <circle cx="118" cy="340" r="6" fill="#64748b"/>
+    <circle cx="118" cy="370" r="6" fill="#64748b"/>
+
+    <!-- Main Camera Chassis -->
+    <path d="M 170 180 L 330 180 C 355 180, 370 195, 370 220 L 370 270 C 370 295, 355 310, 330 310 L 170 310 C 145 310, 130 295, 130 270 L 130 220 C 130 195, 145 180, 170 180 Z" fill="url(#accentGrad)"/>
+    
+    <!-- Top Sunshield / Hood -->
+    <path d="M 140 170 L 385 170 C 395 170, 400 176, 395 186 L 375 210 L 140 210 Z" fill="#0f172a" opacity="0.8"/>
+
+    <!-- Front Bezel / Lens Housing -->
+    <ellipse cx="370" cy="245" rx="22" ry="55" fill="#090d16" stroke="#0284c7" stroke-width="4"/>
+    <ellipse cx="372" cy="245" rx="14" ry="40" fill="url(#lensGrad)"/>
+    <circle cx="372" cy="245" r="10" fill="#0f172a"/>
+    <circle cx="375" cy="241" r="3.5" fill="#ffffff" opacity="0.85"/>
+
+    <!-- Status Recording LED Indicator -->
+    <circle cx="330" cy="205" r="7" fill="#ef4444" filter="url(#glow)"/>
+    <circle cx="330" cy="205" r="3.5" fill="#fca5a5"/>
+
+    <!-- Body Tech Lines / Accents -->
+    <line x1="175" y1="245" x2="310" y2="245" stroke="rgba(255,255,255,0.25)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="175" y1="260" x2="260" y2="260" stroke="rgba(255,255,255,0.15)" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

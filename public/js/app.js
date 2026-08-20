@@ -1,4 +1,150 @@
-// Main Application Logic for RTSP Stream Hub
+// Main Application Logic for RTSP Stream Hub with Full Internationalization (i18n)
+
+const translations = {
+  en: {
+    loginSubtitle: 'Please sign in to continue',
+    usernameLabel: 'Username',
+    passwordLabel: 'Password',
+    loginBtn: 'Sign In',
+    navCameras: 'Cameras',
+    navUsers: 'User Management',
+    logoutBtn: 'Logout',
+    myCamerasTitle: 'My Cameras',
+    onvifScanBtn: 'ONVIF Discovery',
+    addCameraBtn: 'Add Camera',
+    usersTitle: 'User Management',
+    createUserBtn: 'Create User',
+    thUsername: 'Username',
+    thRole: 'Role',
+    thViewPermission: 'Can View Cameras',
+    thEditPermission: 'Can Edit Cameras',
+    thActions: 'Actions',
+    modalAddCamera: 'Add Camera',
+    modalEditCamera: 'Edit Camera',
+    labelCameraName: 'Camera Name',
+    labelCameraUrl: 'Camera Stream URL (RTSP, HTTP-MJPEG, HLS, Snapshot)',
+    helpCameraUrl: 'Supports all stream formats (RTSP H.264/H.265, webcams, HLS streams and JPEG snapshots).',
+    labelStreamType: 'Stream Type',
+    optAuto: 'Auto Detect',
+    optRtsp: 'RTSP Stream (H.264 / H.265)',
+    optMjpeg: 'Direct MJPEG Stream',
+    optHls: 'HLS Livestream (.m3u8)',
+    optSnapshot: 'JPEG/PNG Snapshot (Interval)',
+    labelInterval: 'Interval',
+    labelDashboardLink: 'Dashboard Stream Link (MJPEG)',
+    helpDashboardLink: 'Long-lived tokenized link for your SmartHome Dashboard (valid for 20 years).',
+    btnSave: 'Save',
+    modalCreateUser: 'Create New User',
+    optRoleUser: 'Standard User',
+    optRoleAdmin: 'Administrator',
+    permAllowView: 'Can view cameras',
+    permAllowEdit: 'Can edit cameras',
+    btnCreate: 'Create',
+    modalOnvifTitle: 'ONVIF Camera Discovery',
+    onvifScanDesc: 'Scans local network for ONVIF compliant cameras.',
+    btnStartScan: 'Start Scan',
+    onvifScanning: 'Scanning network... Please wait...',
+    onvifNoCameras: 'No ONVIF cameras found on the local network.',
+    playerLoading: 'Loading live MJPEG stream...',
+    playerError: 'Transcoding error (Check stream URL or camera availability)',
+    noCamerasRegistered: 'No cameras registered yet. Click "Add Camera" or "ONVIF Discovery" to get started.',
+    startStream: 'Start Stream',
+    editBtn: 'Edit',
+    deleteBtn: 'Delete',
+    deleteCameraConfirm: 'Are you sure you want to delete this camera?',
+    deleteUserConfirm: 'Are you sure you want to delete this user?',
+    permissionYes: 'Yes',
+    permissionNo: 'No',
+    btnAdopt: 'Add'
+  },
+  de: {
+    loginSubtitle: 'Bitte melde dich an',
+    usernameLabel: 'Benutzername',
+    passwordLabel: 'Passwort',
+    loginBtn: 'Einloggen',
+    navCameras: 'Kameras',
+    navUsers: 'Benutzerverwaltung',
+    logoutBtn: 'Logout',
+    myCamerasTitle: 'Meine Kameras',
+    onvifScanBtn: 'ONVIF-Suche',
+    addCameraBtn: 'Kamera hinzufügen',
+    usersTitle: 'Benutzerverwaltung',
+    createUserBtn: 'Benutzer erstellen',
+    thUsername: 'Benutzername',
+    thRole: 'Rolle',
+    thViewPermission: 'Kameras ansehen',
+    thEditPermission: 'Kameras bearbeiten',
+    thActions: 'Aktionen',
+    modalAddCamera: 'Kamera hinzufügen',
+    modalEditCamera: 'Kamera bearbeiten',
+    labelCameraName: 'Kameraname',
+    labelCameraUrl: 'Kamera Stream URL (RTSP, HTTP-MJPEG, HLS, Snapshot)',
+    helpCameraUrl: 'Unterstützt alle Formate (RTSP H.264/H.265, Webcams, HLS Streams und JPEG Bilder).',
+    labelStreamType: 'Stream-Typ',
+    optAuto: 'Automatisch erkennen',
+    optRtsp: 'RTSP Stream (H.264 / H.265)',
+    optMjpeg: 'Direkter MJPEG Stream',
+    optHls: 'HLS Livestream (.m3u8)',
+    optSnapshot: 'JPEG/PNG Snapshot (Intervall)',
+    labelInterval: 'Intervall',
+    labelDashboardLink: 'Dashboard Stream Link (MJPEG)',
+    helpDashboardLink: 'Dauerhafter Link für dein SmartHome-Dashboard (20 Jahre gültig).',
+    btnSave: 'Speichern',
+    modalCreateUser: 'Neuen Benutzer erstellen',
+    optRoleUser: 'Standard Benutzer',
+    optRoleAdmin: 'Administrator',
+    permAllowView: 'Kameras ansehen erlaubt',
+    permAllowEdit: 'Kameras bearbeiten erlaubt',
+    btnCreate: 'Erstellen',
+    modalOnvifTitle: 'ONVIF Kamera-Suchlauf',
+    onvifScanDesc: 'Scanner sucht nach Kameras im lokalen Netzwerk.',
+    btnStartScan: 'Suchlauf starten',
+    onvifScanning: 'Netzwerk-Suchlauf läuft... Bitte warten...',
+    onvifNoCameras: 'Keine ONVIF Kameras im Netzwerk gefunden.',
+    playerLoading: 'Live MJPEG Stream wird geladen...',
+    playerError: 'Transcodierungs-Fehler (Prüfe die Stream URL oder Erreichbarkeit)',
+    noCamerasRegistered: 'Noch keine Kameras eingerichtet. Klicke auf "Kamera hinzufügen" oder "ONVIF-Suche".',
+    startStream: 'Stream starten',
+    editBtn: 'Bearbeiten',
+    deleteBtn: 'Löschen',
+    deleteCameraConfirm: 'Möchtest du diese Kamera wirklich löschen?',
+    deleteUserConfirm: 'Möchtest du diesen Benutzer wirklich löschen?',
+    permissionYes: 'Ja',
+    permissionNo: 'Nein',
+    btnAdopt: 'Hinzufügen'
+  }
+};
+
+let currentLang = localStorage.getItem('rsh_lang') || 'en';
+
+function t(key) {
+  return (translations[currentLang] && translations[currentLang][key]) || translations['en'][key] || key;
+}
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('rsh_lang', lang);
+  document.documentElement.lang = lang;
+
+  const langTextEl = document.getElementById('langText');
+  const loginLangTextEl = document.getElementById('loginLangText');
+  if (langTextEl) langTextEl.textContent = lang.toUpperCase();
+  if (loginLangTextEl) loginLangTextEl.textContent = lang.toUpperCase();
+
+  // Update all elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(elem => {
+    const key = elem.getAttribute('data-i18n');
+    if (translations[lang] && translations[lang][key]) {
+      elem.textContent = translations[lang][key];
+    }
+  });
+
+  // Re-render cameras or users if active
+  if (state.token && state.user) {
+    loadCameras();
+    if (state.user.role === 'admin') loadUsers();
+  }
+}
 
 const state = {
   token: localStorage.getItem('token') || null,
@@ -20,6 +166,8 @@ const el = {
   btnLogoutBtn: document.getElementById('btnLogoutBtn'),
   btnThemeToggle: document.getElementById('btnThemeToggle'),
   themeIcon: document.getElementById('themeIcon'),
+  btnLangToggle: document.getElementById('btnLangToggle'),
+  btnLoginLangToggle: document.getElementById('btnLoginLangToggle'),
   
   btnCamerasView: document.getElementById('btnCamerasView'),
   btnAdminView: document.getElementById('btnAdminView'),
@@ -98,53 +246,23 @@ let inactivityTimer = null;
 
 function resetInactivityTimer() {
   if (!state.token) return;
-  if (inactivityTimer) clearTimeout(inactivityTimer);
+  clearTimeout(inactivityTimer);
   inactivityTimer = setTimeout(() => {
-    console.log('Session expired due to 15 minutes of inactivity');
-    logout(true);
+    console.warn('Auto-logout triggered due to 15 minutes of inactivity');
+    logout(false);
   }, INACTIVITY_TIMEOUT_MS);
 }
 
-['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach((evt) => {
+['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
   window.addEventListener(evt, resetInactivityTimer, { passive: true });
 });
 
-function logout(dueToInactivity = false) {
-  state.token = null;
-  state.user = null;
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  if (inactivityTimer) clearTimeout(inactivityTimer);
-
-  stopPlayback();
-  el.playerModal.hide();
-  el.cameraModal.hide();
-  el.userModal.hide();
-  el.discoveryModal.hide();
-
-  el.loginSection.classList.remove('d-none');
-  el.mainSection.classList.add('d-none');
-
-  if (dueToInactivity) {
-    el.loginAlert.textContent = 'Du wurdest aufgrund von Inaktivität automatisch abgemeldet.';
-    el.loginAlert.className = 'alert alert-warning';
-    el.loginAlert.classList.remove('d-none');
-  } else {
-    el.loginAlert.classList.add('d-none');
-  }
+// Initialize Theme
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-bs-theme', savedTheme);
+  updateThemeIcon(savedTheme);
 }
-
-// Theme Toggle
-let currentTheme = localStorage.getItem('theme') || 'dark';
-document.documentElement.setAttribute('data-bs-theme', currentTheme);
-updateThemeIcon(currentTheme);
-
-el.btnThemeToggle.addEventListener('click', () => {
-  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-bs-theme', currentTheme);
-  localStorage.setItem('theme', currentTheme);
-  updateThemeIcon(currentTheme);
-});
 
 function updateThemeIcon(theme) {
   if (theme === 'dark') {
@@ -154,20 +272,47 @@ function updateThemeIcon(theme) {
   }
 }
 
-// Toggle Snapshot interval container in modal
-el.cameraStreamType.addEventListener('change', () => {
-  if (el.cameraStreamType.value === 'snapshot') {
-    el.refreshIntervalContainer.classList.remove('d-none');
-  } else {
-    el.refreshIntervalContainer.classList.add('d-none');
-  }
+el.btnThemeToggle.addEventListener('click', () => {
+  const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+  const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-bs-theme', nextTheme);
+  localStorage.setItem('theme', nextTheme);
+  updateThemeIcon(nextTheme);
 });
 
-// === AUTHENTICATION ===
+// Language Switcher Events
+const toggleLang = () => {
+  const nextLang = currentLang === 'en' ? 'de' : 'en';
+  applyLanguage(nextLang);
+};
+if (el.btnLangToggle) el.btnLangToggle.addEventListener('click', toggleLang);
+if (el.btnLoginLangToggle) el.btnLoginLangToggle.addEventListener('click', toggleLang);
+
+// === AUTHENTICATION LOGIC ===
+
+function setAuthState(token, user) {
+  state.token = token;
+  state.user = user;
+  if (token) {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+  } else {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
+}
+
+function logout(notifyServer = true) {
+  setAuthState(null, null);
+  clearTimeout(inactivityTimer);
+  showLoginView();
+}
+
+el.btnLogoutBtn.addEventListener('click', () => logout(true));
 
 el.loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const username = el.usernameInput.value;
+  const username = el.usernameInput.value.trim();
   const password = el.passwordInput.value;
 
   try {
@@ -176,40 +321,35 @@ el.loginForm.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
+
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login fehlgeschlagen');
+    if (!res.ok) {
+      throw new Error(data.error || 'Login failed');
+    }
 
-    state.token = data.token;
-    state.user = data.user;
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-
-    initApp();
+    setAuthState(data.token, data.user);
+    el.loginAlert.classList.add('d-none');
+    el.loginForm.reset();
+    showMainView();
   } catch (err) {
     el.loginAlert.textContent = err.message;
-    el.loginAlert.className = 'alert alert-danger';
     el.loginAlert.classList.remove('d-none');
   }
 });
 
-el.btnLogoutBtn.addEventListener('click', () => {
-  logout(false);
-});
+// === VIEW SWITCHING ===
 
-// === APP INITIALIZATION ===
+function showLoginView() {
+  el.loginSection.classList.remove('d-none');
+  el.mainSection.classList.add('d-none');
+}
 
-function initApp() {
-  if (!state.token) {
-    el.loginSection.classList.remove('d-none');
-    el.mainSection.classList.add('d-none');
-    return;
-  }
-
+function showMainView() {
   el.loginSection.classList.add('d-none');
   el.mainSection.classList.remove('d-none');
-  el.userBadge.textContent = `${state.user.username} (${state.user.role === 'admin' ? 'Admin' : 'User'})`;
-
-  // Show/Hide Admin links and Camera Edit buttons based on permissions
+  
+  el.userBadge.textContent = `${state.user.username} (${state.user.role})`;
+  
   if (state.user.role === 'admin') {
     el.navAdminLink.classList.remove('d-none');
   } else {
@@ -224,37 +364,47 @@ function initApp() {
     el.btnDiscoverOpenBtn.classList.add('d-none');
   }
 
-  resetInactivityTimer();
+  showCamerasPage();
   loadCameras();
+  resetInactivityTimer();
 }
 
-// Navigation
-el.btnCamerasView.addEventListener('click', (e) => {
-  e.preventDefault();
+function showCamerasPage() {
   el.camerasPage.classList.remove('d-none');
   el.adminPage.classList.add('d-none');
   el.btnCamerasView.classList.add('active');
   el.btnAdminView.classList.remove('active');
-  loadCameras();
-});
+}
 
-el.btnAdminView.addEventListener('click', (e) => {
-  e.preventDefault();
+function showAdminPage() {
   el.camerasPage.classList.add('d-none');
   el.adminPage.classList.remove('d-none');
   el.btnCamerasView.classList.remove('active');
   el.btnAdminView.classList.add('active');
   loadUsers();
+}
+
+el.btnCamerasView.addEventListener('click', (e) => {
+  e.preventDefault();
+  showCamerasPage();
 });
 
-// === CAMERA CRUD ===
+el.btnAdminView.addEventListener('click', (e) => {
+  e.preventDefault();
+  showAdminPage();
+});
+
+// === CAMERA MANAGEMENT ===
+
+el.cameraStreamType.addEventListener('change', () => {
+  if (el.cameraStreamType.value === 'snapshot') {
+    el.refreshIntervalContainer.classList.remove('d-none');
+  } else {
+    el.refreshIntervalContainer.classList.add('d-none');
+  }
+});
 
 async function loadCameras() {
-  if (!state.user.can_view) {
-    el.cameraGrid.innerHTML = '<div class="alert alert-warning w-100">Keine Berechtigung zum Betrachten von Kameras.</div>';
-    return;
-  }
-
   try {
     const res = await authFetch('/api/cameras');
     if (!res.ok) return;
@@ -268,42 +418,49 @@ async function loadCameras() {
 function renderCameras(cameras) {
   el.cameraGrid.innerHTML = '';
   if (cameras.length === 0) {
-    el.cameraGrid.innerHTML = '<div class="col-12"><div class="alert alert-info text-center">Keine Kameras vorhanden. Klicke auf "Kamera hinzufügen".</div></div>';
+    el.cameraGrid.innerHTML = `
+      <div class="col-12 text-center text-muted p-5 card shadow-sm">
+        <i class="fa-solid fa-video-slash fa-3x mb-3 text-secondary"></i>
+        <h5>${t('noCamerasRegistered')}</h5>
+      </div>
+    `;
     return;
   }
 
   cameras.forEach(c => {
     const card = document.createElement('div');
     card.className = 'col';
-    
-    const sType = c.stream_type || 'auto';
-    let badgeClass = 'bg-secondary';
-    let badgeText = 'Auto';
-    if (sType === 'rtsp') { badgeClass = 'bg-primary'; badgeText = 'RTSP'; }
-    else if (sType === 'mjpeg') { badgeClass = 'bg-info text-dark'; badgeText = 'MJPEG'; }
-    else if (sType === 'hls') { badgeClass = 'bg-danger'; badgeText = 'HLS'; }
-    else if (sType === 'snapshot') { badgeClass = 'bg-warning text-dark'; badgeText = `Snapshot (${c.refresh_interval || 2}s)`; }
 
-    // Check if user has edit rights to show modify buttons
     const editButtons = state.user.can_edit ? `
-      <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between">
-        <button class="btn btn-outline-secondary btn-sm" onclick="openEditCameraModal(${c.id}, '${escapeHtml(c.name)}', '${escapeHtml(c.url)}', '${c.stream_type || 'auto'}', ${c.refresh_interval || 2})"><i class="fa-solid fa-edit me-1"></i>Edit</button>
-        <button class="btn btn-outline-danger btn-sm" onclick="deleteCamera(${c.id})"><i class="fa-solid fa-trash me-1"></i>Löschen</button>
+      <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end gap-2 pt-0">
+        <button class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation(); openEditCameraModal(${c.id}, '${escapeHtml(c.name)}', '${escapeHtml(c.url)}', '${c.stream_type}', ${c.refresh_interval || 2})">
+          <i class="fa-solid fa-pen me-1"></i>${t('editBtn')}
+        </button>
+        <button class="btn btn-outline-danger btn-sm" onclick="event.stopPropagation(); deleteCamera(${c.id})">
+          <i class="fa-solid fa-trash me-1"></i>${t('deleteBtn')}
+        </button>
       </div>
     ` : '';
 
+    let badgeClass = 'bg-secondary';
+    let badgeText = c.stream_type ? c.stream_type.toUpperCase() : 'AUTO';
+    if (c.stream_type === 'rtsp') badgeClass = 'bg-primary';
+    else if (c.stream_type === 'mjpeg') badgeClass = 'bg-info text-dark';
+    else if (c.stream_type === 'hls') badgeClass = 'bg-warning text-dark';
+    else if (c.stream_type === 'snapshot') badgeClass = 'bg-success';
+
     card.innerHTML = `
-      <div class="card h-100 shadow-sm camera-card-hover">
-        <div class="card-body d-flex flex-column justify-content-between" onclick="openPlayer(${c.id}, '${escapeHtml(c.name)}')" style="cursor: pointer;">
+      <div class="card h-100 shadow-sm border-0 bg-body-flat camera-card" style="cursor: pointer;" onclick="openPlayer(${c.id}, '${escapeHtml(c.name)}')">
+        <div class="card-body d-flex flex-column justify-content-between">
           <div>
-            <div class="d-flex justify-content-between align-items-start mb-1">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <h5 class="card-title fw-bold mb-0"><i class="fa-solid fa-video me-2 text-primary"></i>${escapeHtml(c.name)}</h5>
               <span class="badge ${badgeClass} ms-2">${badgeText}</span>
             </div>
             <p class="text-muted small text-break mb-0">${escapeHtml(c.url)}</p>
           </div>
           <div class="mt-3 text-end text-primary small fw-bold">
-            Stream starten <i class="fa-solid fa-chevron-right ms-1"></i>
+            ${t('startStream')} <i class="fa-solid fa-chevron-right ms-1"></i>
           </div>
         </div>
         ${editButtons}
@@ -321,7 +478,7 @@ el.btnAddCameraModalOpenBtn.addEventListener('click', () => {
   el.cameraRefreshInterval.value = '2';
   el.refreshIntervalContainer.classList.add('d-none');
   el.dashboardLinkContainer.classList.add('d-none');
-  el.cameraModalTitle.textContent = 'Kamera hinzufügen';
+  el.cameraModalTitle.textContent = t('modalAddCamera');
   el.cameraModal.show();
 });
 
@@ -339,7 +496,7 @@ window.openEditCameraModal = async (id, name, url, streamType = 'auto', refreshI
     el.refreshIntervalContainer.classList.add('d-none');
   }
 
-  el.cameraModalTitle.textContent = 'Kamera bearbeiten';
+  el.cameraModalTitle.textContent = t('modalEditCamera');
   el.dashboardLinkContainer.classList.add('d-none');
 
   try {
@@ -382,7 +539,7 @@ el.cameraForm.addEventListener('submit', async (e) => {
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || 'Speichern fehlgeschlagen');
+      throw new Error(err.error || 'Save failed');
     }
     el.cameraModal.hide();
     loadCameras();
@@ -393,12 +550,12 @@ el.cameraForm.addEventListener('submit', async (e) => {
 
 // Delete Camera
 window.deleteCamera = async (id) => {
-  if (!confirm('Möchtest du diese Kamera wirklich löschen?')) return;
+  if (!confirm(t('deleteCameraConfirm'))) return;
   try {
     const res = await authFetch(`/api/cameras/${id}`, {
       method: 'DELETE'
     });
-    if (!res.ok) throw new Error('Löschen fehlgeschlagen');
+    if (!res.ok) throw new Error('Delete failed');
     loadCameras();
   } catch (err) {
     alert(err.message);
@@ -412,12 +569,12 @@ window.openPlayer = (id, name) => {
   el.playerModalTitle.textContent = name;
   el.playerModal.show();
   
-  el.playerStatus.textContent = 'Live MJPEG Stream wird geladen...';
+  el.playerStatus.textContent = t('playerLoading');
   el.mjpegImg.src = `/api/streams/mjpeg/${id}?token=${state.token}`;
   el.mjpegImg.classList.remove('d-none');
   
   el.mjpegImg.onerror = () => {
-    el.playerStatus.textContent = 'Transcodierungs-Fehler (Prüfe die Stream URL oder Kamera-Erreichbarkeit)';
+    el.playerStatus.textContent = t('playerError');
   };
 };
 
@@ -448,30 +605,22 @@ function renderUsers(users) {
   users.forEach(u => {
     const row = document.createElement('tr');
     
-    const isSelf = u.id === state.user.id;
-    const disabledAttr = isSelf ? 'disabled' : '';
+    const viewBadge = u.can_view ? `<span class="badge bg-success">${t('permissionYes')}</span>` : `<span class="badge bg-danger">${t('permissionNo')}</span>`;
+    const editBadge = u.can_edit ? `<span class="badge bg-success">${t('permissionYes')}</span>` : `<span class="badge bg-danger">${t('permissionNo')}</span>`;
+    const roleBadge = u.role === 'admin' ? '<span class="badge bg-primary">Admin</span>' : '<span class="badge bg-secondary">User</span>';
+
+    const deleteBtn = u.id === state.user.id ? '' : `
+      <button class="btn btn-outline-danger btn-sm" onclick="deleteUser(${u.id})">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    `;
 
     row.innerHTML = `
-      <td class="fw-bold">${escapeHtml(u.username)} ${isSelf ? '<span class="badge bg-secondary text-light ms-1">Du</span>' : ''}</td>
-      <td>
-        <select class="form-select form-select-sm" ${disabledAttr} onchange="updateUserPermissions(${u.id}, this.value, ${u.can_view}, ${u.can_edit})">
-          <option value="user" ${u.role === 'user' ? 'selected' : ''}>Standard Benutzer</option>
-          <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Administrator</option>
-        </select>
-      </td>
-      <td>
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" ${disabledAttr} ${u.can_view ? 'checked' : ''} onchange="updateUserPermissions(${u.id}, null, this.checked, null)">
-        </div>
-      </td>
-      <td>
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" ${disabledAttr} ${u.can_edit ? 'checked' : ''} onchange="updateUserPermissions(${u.id}, null, null, this.checked)">
-        </div>
-      </td>
-      <td class="text-end">
-        <button class="btn btn-outline-danger btn-sm" ${disabledAttr} onclick="deleteUser(${u.id})"><i class="fa-solid fa-user-xmark"></i></button>
-      </td>
+      <td class="fw-bold">${escapeHtml(u.username)}</td>
+      <td>${roleBadge}</td>
+      <td>${viewBadge}</td>
+      <td>${editBadge}</td>
+      <td class="text-end">${deleteBtn}</td>
     `;
     el.userTableBody.appendChild(row);
   });
@@ -483,26 +632,24 @@ el.btnAddUserModalOpenBtn.addEventListener('click', () => {
   el.userModal.show();
 });
 
-// Create User
+// Save New User
 el.userForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const username = el.newUsernameInput.value;
+  const username = el.newUsernameInput.value.trim();
   const password = el.newPasswordInput.value;
   const role = el.newUserRole.value;
-  const can_view = el.newUserView.checked;
-  const can_edit = el.newUserEdit.checked;
+  const can_view_cameras = el.newUserView.checked;
+  const can_edit_cameras = el.newUserEdit.checked;
 
   try {
     const res = await authFetch('/api/users', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ username, password, role, can_view, can_edit })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, role, can_view_cameras, can_edit_cameras })
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || 'Erstellen fehlgeschlagen');
+      throw new Error(err.error || 'Create user failed');
     }
     el.userModal.hide();
     loadUsers();
@@ -511,41 +658,14 @@ el.userForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Update User Permissions
-window.updateUserPermissions = async (id, newRole = null, newCanView = null, newCanEdit = null) => {
-  try {
-    const resList = await authFetch('/api/users');
-    if (!resList.ok) return;
-    const users = await resList.json();
-    const targetUser = users.find(u => u.id === id);
-    if (!targetUser) return;
-
-    const role = newRole !== null ? newRole : targetUser.role;
-    const can_view = newCanView !== null ? newCanView : targetUser.can_view;
-    const can_edit = newCanEdit !== null ? newCanEdit : targetUser.can_edit;
-
-    const res = await authFetch(`/api/users/${id}/permissions`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ role, can_view, can_edit })
-    });
-    if (!res.ok) throw new Error('Berechtigungen konnten nicht aktualisiert werden');
-    loadUsers();
-  } catch (err) {
-    alert(err.message);
-  }
-};
-
 // Delete User
 window.deleteUser = async (id) => {
-  if (!confirm('Möchtest du diesen Benutzer wirklich löschen?')) return;
+  if (!confirm(t('deleteUserConfirm'))) return;
   try {
     const res = await authFetch(`/api/users/${id}`, {
       method: 'DELETE'
     });
-    if (!res.ok) throw new Error('Löschen fehlgeschlagen');
+    if (!res.ok) throw new Error('Delete user failed');
     loadUsers();
   } catch (err) {
     alert(err.message);
@@ -590,13 +710,13 @@ function showCopySuccess() {
 // === ONVIF CAMERA DISCOVERY ===
 
 el.btnDiscoverOpenBtn.addEventListener('click', () => {
-  el.discoveryResultsList.innerHTML = '<div class="text-center p-4 text-muted">Klicke auf "Suchlauf starten", um nach ONVIF Kameras im Netzwerk zu scannen.</div>';
+  el.discoveryResultsList.innerHTML = `<div class="text-center p-4 text-muted">${t('onvifScanDesc')}</div>`;
   el.discoveryStatus.classList.add('d-none');
   el.discoveryModal.show();
 });
 
 el.btnRunDiscovery.addEventListener('click', async () => {
-  el.discoveryStatus.textContent = 'Netzwerk-Suchlauf läuft... Bitte warten...';
+  el.discoveryStatus.textContent = t('onvifScanning');
   el.discoveryStatus.classList.remove('d-none');
   el.discoveryResultsList.innerHTML = '';
   el.btnRunDiscovery.disabled = true;
@@ -605,14 +725,14 @@ el.btnRunDiscovery.addEventListener('click', async () => {
     const res = await authFetch('/api/cameras/discovery');
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || 'Suchlauf fehlgeschlagen');
+      throw new Error(err.error || 'Discovery scan failed');
     }
     
     const devices = await res.json();
     el.discoveryStatus.classList.add('d-none');
     renderDiscoveryResults(devices);
   } catch (err) {
-    el.discoveryStatus.textContent = `Fehler: ${err.message}`;
+    el.discoveryStatus.textContent = `Error: ${err.message}`;
     el.discoveryStatus.classList.remove('d-none');
     el.discoveryStatus.className = 'alert alert-danger';
   } finally {
@@ -624,7 +744,7 @@ function renderDiscoveryResults(devices) {
   el.discoveryResultsList.innerHTML = '';
   
   if (devices.length === 0) {
-    el.discoveryResultsList.innerHTML = '<div class="text-center p-4 text-warning"><i class="fa-solid fa-circle-exclamation fa-2x mb-2"></i><br>Keine ONVIF Kameras im Netzwerk gefunden.</div>';
+    el.discoveryResultsList.innerHTML = `<div class="text-center p-4 text-warning"><i class="fa-solid fa-circle-exclamation fa-2x mb-2"></i><br>${t('onvifNoCameras')}</div>`;
     return;
   }
   
@@ -633,16 +753,16 @@ function renderDiscoveryResults(devices) {
     item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3';
     
     const ip = d.address || (d.xaddrs && d.xaddrs[0] ? new URL(d.xaddrs[0]).hostname : '');
-    const model = d.hardware || d.name || 'Unbekannte Kamera';
+    const model = d.hardware || d.name || 'Unknown Camera';
     
     item.innerHTML = `
       <div>
         <h6 class="fw-bold mb-1"><i class="fa-solid fa-microchip text-primary me-2"></i>${escapeHtml(model)}</h6>
         <span class="badge bg-secondary mb-1">IP: ${escapeHtml(ip)}</span>
-        <div class="text-muted small">Location: ${escapeHtml(d.location || 'Keine Angabe')}</div>
+        <div class="text-muted small">Location: ${escapeHtml(d.location || 'N/A')}</div>
       </div>
       <button class="btn btn-primary btn-sm fw-bold" onclick="selectDiscoveredCamera('${escapeHtml(model)}', '${escapeHtml(ip)}')">
-        <i class="fa-solid fa-plus me-1"></i>Hinzufügen
+        <i class="fa-solid fa-plus me-1"></i>${t('btnAdopt')}
       </button>
     `;
     el.discoveryResultsList.appendChild(item);
@@ -660,9 +780,19 @@ window.selectDiscoveredCamera = (model, ip) => {
   el.cameraStreamType.value = 'rtsp';
   el.cameraRefreshInterval.value = '2';
   el.refreshIntervalContainer.classList.add('d-none');
-  el.cameraModalTitle.textContent = 'Kamera hinzufügen';
+  el.cameraModalTitle.textContent = t('modalAddCamera');
   el.cameraModal.show();
 };
 
 // Init application
+function initApp() {
+  initTheme();
+  applyLanguage(currentLang);
+  if (state.token && state.user) {
+    showMainView();
+  } else {
+    showLoginView();
+  }
+}
+
 initApp();

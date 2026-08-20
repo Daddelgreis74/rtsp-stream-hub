@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="de" data-bs-theme="dark">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RTSP Stream Hub</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- FontAwesome for icons -->
@@ -13,24 +14,29 @@
 <body class="bg-body-tertiary">
 
   <!-- ================= LOGIN SECTION ================= -->
-  <div id="loginSection" class="container d-flex justify-content-center align-items-center vh-100">
+  <div id="loginSection" class="container d-flex justify-content-center align-items-center vh-100 position-relative">
+    <div class="position-absolute top-0 end-0 p-3">
+      <button class="btn btn-outline-secondary btn-sm" id="btnLoginLangToggle">
+        <i class="fa-solid fa-globe me-1"></i><span id="loginLangText">EN</span>
+      </button>
+    </div>
     <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
       <div class="text-center mb-4">
-        <i class="fa-solid fa-video-camera fa-3x text-primary mb-2"></i>
+        <img src="icon.svg" alt="RTSP Stream Hub" style="width: 64px; height: 64px;" class="mb-2">
         <h3 class="fw-bold">RTSP Stream Hub</h3>
-        <p class="text-muted">Bitte melde dich an</p>
+        <p class="text-muted" data-i18n="loginSubtitle">Please sign in to continue</p>
       </div>
       <form id="loginForm">
         <div class="mb-3">
-          <label for="usernameInput" class="form-label">Benutzername</label>
-          <input type="text" class="form-control" id="usernameInput" required placeholder="z.B. admin">
+          <label for="usernameInput" class="form-label" data-i18n="usernameLabel">Username</label>
+          <input type="text" class="form-control" id="usernameInput" required placeholder="e.g. admin">
         </div>
         <div class="mb-3">
-          <label for="passwordInput" class="form-label">Passwort</label>
+          <label for="passwordInput" class="form-label" data-i18n="passwordLabel">Password</label>
           <input type="password" class="form-control" id="passwordInput" required placeholder="••••••••">
         </div>
         <div class="alert alert-danger d-none" id="loginAlert"></div>
-        <button type="submit" class="btn btn-primary w-100 fw-bold">Einloggen</button>
+        <button type="submit" class="btn btn-primary w-100 fw-bold" data-i18n="loginBtn">Sign In</button>
       </form>
     </div>
   </div>
@@ -40,8 +46,9 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg border-bottom shadow-sm bg-body-flat">
       <div class="container">
-        <span class="navbar-brand fw-bold text-primary">
-          <i class="fa-solid fa-network-wired me-2"></i>RTSP Stream Hub
+        <span class="navbar-brand fw-bold text-primary d-flex align-items-center gap-2">
+          <img src="icon.svg" alt="Logo" style="width: 28px; height: 28px;">
+          <span>RTSP Stream Hub</span>
         </span>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
           <span class="navbar-toggler-icon"></span>
@@ -49,19 +56,24 @@
         <div class="collapse navbar-collapse" id="navMenu">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
-              <a class="nav-link active" id="btnCamerasView" href="#"><i class="fa-solid fa-camera me-1"></i>Kameras</a>
+              <a class="nav-link active" id="btnCamerasView" href="#"><i class="fa-solid fa-camera me-1"></i><span data-i18n="navCameras">Cameras</span></a>
             </li>
             <li class="nav-item d-none" id="navAdminLink">
-              <a class="nav-link" id="btnAdminView" href="#"><i class="fa-solid fa-user-gear me-1"></i>Benutzerverwaltung</a>
+              <a class="nav-link" id="btnAdminView" href="#"><i class="fa-solid fa-user-gear me-1"></i><span data-i18n="navUsers">User Management</span></a>
             </li>
           </ul>
-          <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-outline-secondary btn-sm" id="btnThemeToggle">
+          <div class="d-flex align-items-center gap-2">
+            <!-- Language Switcher -->
+            <button class="btn btn-outline-secondary btn-sm" id="btnLangToggle" title="Switch Language">
+              <i class="fa-solid fa-globe me-1"></i><span id="langText">EN</span>
+            </button>
+            <!-- Theme Toggle -->
+            <button class="btn btn-outline-secondary btn-sm" id="btnThemeToggle" title="Toggle Theme">
               <i class="fa-solid fa-moon" id="themeIcon"></i>
             </button>
-            <span class="badge bg-primary px-3 py-2" id="userBadge">Benutzer</span>
+            <span class="badge bg-primary px-3 py-2" id="userBadge">User</span>
             <button class="btn btn-outline-danger btn-sm" id="btnLogoutBtn">
-              <i class="fa-solid fa-sign-out-alt me-1"></i>Logout
+              <i class="fa-solid fa-sign-out-alt me-1"></i><span data-i18n="logoutBtn">Logout</span>
             </button>
           </div>
         </div>
@@ -74,13 +86,13 @@
       <!-- Cameras Page View -->
       <div id="camerasPage">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2 class="fw-bold mb-0">Meine Kameras</h2>
+          <h2 class="fw-bold mb-0" data-i18n="myCamerasTitle">My Cameras</h2>
           <div class="d-flex gap-2">
             <button class="btn btn-outline-primary fw-bold d-none" id="btnDiscoverOpenBtn">
-              <i class="fa-solid fa-satellite-dish me-1"></i>ONVIF-Suche
+              <i class="fa-solid fa-satellite-dish me-1"></i><span data-i18n="onvifScanBtn">ONVIF Discovery</span>
             </button>
             <button class="btn btn-success fw-bold d-none" id="btnAddCameraModalOpenBtn">
-              <i class="fa-solid fa-plus me-1"></i>Kamera hinzufügen
+              <i class="fa-solid fa-plus me-1"></i><span data-i18n="addCameraBtn">Add Camera</span>
             </button>
           </div>
         </div>
@@ -93,9 +105,9 @@
       <!-- User Management Page View -->
       <div id="adminPage" class="d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2 class="fw-bold mb-0">Benutzerverwaltung</h2>
+          <h2 class="fw-bold mb-0" data-i18n="usersTitle">User Management</h2>
           <button class="btn btn-primary fw-bold" id="btnAddUserModalOpenBtn">
-            <i class="fa-solid fa-user-plus me-1"></i>Benutzer erstellen
+            <i class="fa-solid fa-user-plus me-1"></i><span data-i18n="createUserBtn">Create User</span>
           </button>
         </div>
 
@@ -104,11 +116,11 @@
             <table class="table table-hover align-middle mb-0">
               <thead>
                 <tr>
-                  <th>Benutzername</th>
-                  <th>Rolle</th>
-                  <th>Rechte: Kameras ansehen</th>
-                  <th>Rechte: Kameras bearbeiten</th>
-                  <th class="text-end">Aktionen</th>
+                  <th data-i18n="thUsername">Username</th>
+                  <th data-i18n="thRole">Role</th>
+                  <th data-i18n="thViewPermission">Can View Cameras</th>
+                  <th data-i18n="thEditPermission">Can Edit Cameras</th>
+                  <th class="text-end" data-i18n="thActions">Actions</th>
                 </tr>
               </thead>
               <tbody id="userTableBody">
@@ -129,54 +141,54 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="cameraModalTitle">Kamera hinzufügen</h5>
+          <h5 class="modal-title" id="cameraModalTitle" data-i18n="modalAddCamera">Add Camera</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <form id="cameraForm">
             <input type="hidden" id="cameraIdField">
             <div class="mb-3">
-              <label for="cameraNameInput" class="form-label">Kameraname</label>
-              <input type="text" class="form-control" id="cameraNameInput" required placeholder="z.B. Garten TC60">
+              <label for="cameraNameInput" class="form-label" data-i18n="labelCameraName">Camera Name</label>
+              <input type="text" class="form-control" id="cameraNameInput" required placeholder="e.g. Garden TC60">
             </div>
             <div class="mb-3">
-              <label for="cameraUrlInput" class="form-label">Kamera Stream URL (RTSP, HTTP-MJPEG, HLS, Snapshot)</label>
+              <label for="cameraUrlInput" class="form-label" data-i18n="labelCameraUrl">Camera Stream URL (RTSP, HTTP-MJPEG, HLS, Snapshot)</label>
               <input type="text" class="form-control" id="cameraUrlInput" required placeholder="rtsp://..., http://..., https://...m3u8, .jpg">
-              <div class="form-text">Unterstützt alle Formate (RTSP H.264/H.265, direkte Webcams, HLS Streams und JPEG Bilder).</div>
+              <div class="form-text" data-i18n="helpCameraUrl">Supports all stream formats (RTSP H.264/H.265, webcams, HLS streams and JPEG snapshots).</div>
             </div>
             <div class="row">
               <div class="col-md-7 mb-3">
-                <label for="cameraStreamType" class="form-label">Stream-Typ</label>
+                <label for="cameraStreamType" class="form-label" data-i18n="labelStreamType">Stream Type</label>
                 <select class="form-select" id="cameraStreamType">
-                  <option value="auto">Automatisch erkennen</option>
-                  <option value="rtsp">RTSP Stream (H.264 / H.265)</option>
-                  <option value="mjpeg">Direkter MJPEG Stream</option>
-                  <option value="hls">HLS Livestream (.m3u8)</option>
-                  <option value="snapshot">JPEG/PNG Snapshot (Intervall)</option>
+                  <option value="auto" data-i18n="optAuto">Auto Detect</option>
+                  <option value="rtsp" data-i18n="optRtsp">RTSP Stream (H.264 / H.265)</option>
+                  <option value="mjpeg" data-i18n="optMjpeg">Direct MJPEG Stream</option>
+                  <option value="hls" data-i18n="optHls">HLS Livestream (.m3u8)</option>
+                  <option value="snapshot" data-i18n="optSnapshot">JPEG/PNG Snapshot (Interval)</option>
                 </select>
               </div>
               <div class="col-md-5 mb-3 d-none" id="refreshIntervalContainer">
-                <label for="cameraRefreshInterval" class="form-label">Intervall</label>
+                <label for="cameraRefreshInterval" class="form-label" data-i18n="labelInterval">Interval</label>
                 <select class="form-select" id="cameraRefreshInterval">
-                  <option value="1">1 Sekunde</option>
-                  <option value="2" selected>2 Sekunden</option>
-                  <option value="5">5 Sekunden</option>
-                  <option value="10">10 Sekunden</option>
-                  <option value="30">30 Sekunden</option>
+                  <option value="1">1 second</option>
+                  <option value="2" selected>2 seconds</option>
+                  <option value="5">5 seconds</option>
+                  <option value="10">10 seconds</option>
+                  <option value="30">30 seconds</option>
                 </select>
               </div>
             </div>
             <div class="mb-3 d-none" id="dashboardLinkContainer">
-              <label class="form-label fw-bold text-success">Dashboard Stream Link (MJPEG)</label>
+              <label class="form-label fw-bold text-success" data-i18n="labelDashboardLink">Dashboard Stream Link (MJPEG)</label>
               <div class="input-group">
                 <input type="text" class="form-control form-control-sm" id="dashboardLinkInput" readonly>
-                <button class="btn btn-outline-success btn-sm" type="button" id="btnCopyDashboardLink">
+                <button class="btn btn-outline-success btn-sm" type="button" id="btnCopyDashboardLink" title="Copy Link">
                   <i class="fa-solid fa-copy"></i>
                 </button>
               </div>
-              <div class="form-text">Dauerhafter Link für dein SmartHome-Dashboard (20 Jahre gültig).</div>
+              <div class="form-text" data-i18n="helpDashboardLink">Long-lived tokenized link for your SmartHome Dashboard (valid for 20 years).</div>
             </div>
-            <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnSaveCamera">Speichern</button>
+            <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnSaveCamera" data-i18n="btnSave">Save</button>
           </form>
         </div>
       </div>
@@ -188,56 +200,57 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Neuen Benutzer erstellen</h5>
+          <h5 class="modal-title" data-i18n="modalCreateUser">Create New User</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <form id="userForm">
             <div class="mb-3">
-              <label for="newUsernameInput" class="form-label">Benutzername</label>
+              <label for="newUsernameInput" class="form-label" data-i18n="usernameLabel">Username</label>
               <input type="text" class="form-control" id="newUsernameInput" required>
             </div>
             <div class="mb-3">
-              <label for="newPasswordInput" class="form-label">Passwort</label>
+              <label for="newPasswordInput" class="form-label" data-i18n="passwordLabel">Password</label>
               <input type="password" class="form-control" id="newPasswordInput" required>
             </div>
             <div class="mb-3">
-              <label for="newUserRole" class="form-label">Rolle</label>
+              <label for="newUserRole" class="form-label" data-i18n="thRole">Role</label>
               <select class="form-select" id="newUserRole">
-                <option value="user">Standard Benutzer</option>
-                <option value="admin">Administrator</option>
+                <option value="user" data-i18n="optRoleUser">Standard User</option>
+                <option value="admin" data-i18n="optRoleAdmin">Administrator</option>
               </select>
             </div>
             <div class="mb-3 form-check">
               <input type="checkbox" class="form-check-input" id="newUserView" checked>
-              <label class="form-check-label" for="newUserView">Kameras ansehen erlaubt</label>
+              <label class="form-check-label" for="newUserView" data-i18n="permAllowView">Can view cameras</label>
             </div>
             <div class="mb-3 form-check">
               <input type="checkbox" class="form-check-input" id="newUserEdit">
-              <label class="form-check-label" for="newUserEdit">Kameras bearbeiten erlaubt</label>
+              <label class="form-check-label" for="newUserEdit" data-i18n="permAllowEdit">Can edit cameras</label>
             </div>
-            <button type="submit" class="btn btn-primary w-100 fw-bold">Erstellen</button>
+            <button type="submit" class="btn btn-primary w-100 fw-bold" data-i18n="btnCreate">Create</button>
           </form>
         </div>
       </div>
     </div>
   </div>
+
   <!-- ONVIF Discovery Modal -->
   <div class="modal fade" id="discoveryModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="fa-solid fa-satellite-dish me-2 text-primary"></i>ONVIF Kamera-Suchlauf</h5>
+          <h5 class="modal-title"><i class="fa-solid fa-satellite-dish me-2 text-primary"></i><span data-i18n="modalOnvifTitle">ONVIF Camera Discovery</span></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-muted small">Scanner sucht nach Kameras im lokalen Netzwerk.</span>
+            <span class="text-muted small" data-i18n="onvifScanDesc">Scans local network for ONVIF compliant cameras.</span>
             <button class="btn btn-outline-primary btn-sm fw-bold" id="btnRunDiscovery">
-              <i class="fa-solid fa-rotate me-1"></i>Suchlauf starten
+              <i class="fa-solid fa-rotate me-1"></i><span data-i18n="btnStartScan">Start Scan</span>
             </button>
           </div>
-          <div id="discoveryStatus" class="alert alert-info d-none">Suchlauf läuft... Bitte warten...</div>
+          <div id="discoveryStatus" class="alert alert-info d-none">Scanning network... Please wait...</div>
           <div class="list-group" id="discoveryResultsList">
             <!-- Dynamically populated discovery results -->
           </div>
@@ -251,7 +264,7 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="playerModalTitle">Kamera Stream</h5>
+          <h5 class="modal-title" id="playerModalTitle">Camera Stream</h5>
           <button type="button" class="btn-close" id="btnStopStream" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-0 bg-black d-flex align-items-center justify-content-center" style="aspect-ratio: 16/9;">
@@ -259,7 +272,7 @@
             <img id="mjpegImg" class="w-100 h-100 d-none" style="object-fit: contain;">
             
             <div class="position-absolute bottom-0 start-0 p-3 bg-dark bg-opacity-75 text-white w-100 d-flex justify-content-between align-items-center">
-              <span id="playerStatus" class="small">Lade Stream...</span>
+              <span id="playerStatus" class="small" data-i18n="playerLoading">Loading stream...</span>
             </div>
           </div>
         </div>
