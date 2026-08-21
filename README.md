@@ -1,8 +1,10 @@
 <div align="center">
 
+<img src="public/icon.svg" alt="RTSP Stream Hub Logo" width="128" height="128" style="margin-bottom: 16px;">
+
 # 🎥 RTSP Stream Hub
 
-**High-Performance RTSP, ONVIF & Webcam Stream Hub with On-the-Fly MJPEG Transcoding & Hardware Acceleration**
+**High-Performance RTSP, ONVIF & Webcam Stream Hub with On-the-Fly MJPEG Transcoding, Stream Multiplexing & Hardware Acceleration**
 
 [![GitHub Release](https://img.shields.io/github/v/release/Daddelgreis74/rtsp-stream-hub?color=0080ff&logo=github&style=flat-square)](https://github.com/Daddelgreis74/rtsp-stream-hub/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/daddelgreis74/rtsp-stream-hub?logo=docker&logoColor=white&color=2496ED&style=flat-square)](https://hub.docker.com/r/daddelgreis74/rtsp-stream-hub)
