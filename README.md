@@ -141,7 +141,7 @@ docker run -d \
 1. Go to **Apps > Discover Apps > Custom App**.
 2. **Application Name:** `rtsp-stream-hub`
 3. **Image Repository:** `daddelgreis74/rtsp-stream-hub` (or `ghcr.io/daddelgreis74/rtsp-stream-hub`)
-4. **Image Tag:** `latest` (or e.g., `1.1.2`)
+4. **Image Tag:** `latest` (or e.g., `1.1.5`)
 5. **Environment Variables:**
    - `JWT_SECRET`: *(Your 32+ character secret key)*
 6. **Port Forwarding:** `8080` (Container) $\rightarrow$ `30474` (or any available host port).
