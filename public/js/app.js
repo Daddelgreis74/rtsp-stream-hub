@@ -63,8 +63,14 @@ const translations = {
     passwordMismatchError: 'New passwords do not match.',
     passwordChangeSuccess: 'Password updated successfully.',
     modalOnvifTitle: 'ONVIF Camera Discovery',
-    onvifScanDesc: 'Scans local network for ONVIF compliant cameras.',
-    btnStartScan: 'Start Scan',
+    onvifScanDesc: 'Scans local network for ONVIF compliant cameras (UDP 3702).',
+    btnStartScan: 'Auto Scan (LAN)',
+    onvifDirectTitle: 'Direct ONVIF Probe (IP & Custom Port, e.g. 2020 for TP-Link Tapo)',
+    onvifIpLabel: 'Camera IP / Host',
+    onvifPortLabel: 'ONVIF Port',
+    onvifPortPresets: 'Port Presets:',
+    btnProbeIp: 'Probe Camera',
+    onvifProbingDirect: 'Probing ONVIF camera at IP:Port...',
     onvifScanning: 'Scanning network... Please wait...',
     onvifNoCameras: 'No ONVIF cameras found on the local network.',
     playerLoading: 'Loading live MJPEG stream...',
@@ -141,8 +147,14 @@ const translations = {
     passwordMismatchError: 'Die neuen Passwörter stimmen nicht überein.',
     passwordChangeSuccess: 'Passwort wurde erfolgreich geändert.',
     modalOnvifTitle: 'ONVIF Kamera-Suchlauf',
-    onvifScanDesc: 'Scanner sucht nach Kameras im lokalen Netzwerk.',
-    btnStartScan: 'Suchlauf starten',
+    onvifScanDesc: 'Scanner sucht nach Kameras im lokalen Netzwerk (UDP 3702).',
+    btnStartScan: 'Auto-Scan (LAN)',
+    onvifDirectTitle: 'Direkte ONVIF-Abfrage (IP & eigener Port, z. B. 2020 für TP-Link Tapo)',
+    onvifIpLabel: 'Kamera-IP / Host',
+    onvifPortLabel: 'ONVIF-Port',
+    onvifPortPresets: 'Port-Auswahl:',
+    btnProbeIp: 'Kamera abfragen',
+    onvifProbingDirect: 'Frage ONVIF-Kamera unter IP:Port ab...',
     onvifScanning: 'Netzwerk-Suchlauf läuft... Bitte warten...',
     onvifNoCameras: 'Keine ONVIF Kameras im Netzwerk gefunden.',
     playerLoading: 'Live MJPEG Stream wird geladen...',
@@ -240,6 +252,12 @@ const el = {
   
   discoveryModal: new bootstrap.Modal(document.getElementById('discoveryModal')),
   btnRunDiscovery: document.getElementById('btnRunDiscovery'),
+  directOnvifProbeForm: document.getElementById('directOnvifProbeForm'),
+  onvifHostInput: document.getElementById('onvifHostInput'),
+  onvifPortInput: document.getElementById('onvifPortInput'),
+  onvifUserInput: document.getElementById('onvifUserInput'),
+  onvifPassInput: document.getElementById('onvifPassInput'),
+  btnDirectProbe: document.getElementById('btnDirectProbe'),
   discoveryStatus: document.getElementById('discoveryStatus'),
   discoveryResultsList: document.getElementById('discoveryResultsList'),
   
@@ -1109,33 +1127,103 @@ el.btnRunDiscovery.addEventListener('click', async () => {
   }
 });
 
+if (el.directOnvifProbeForm) {
+  el.directOnvifProbeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const host = el.onvifHostInput.value.trim();
+    const port = parseInt(el.onvifPortInput.value, 10) || 2020;
+    const username = el.onvifUserInput.value.trim();
+    const password = el.onvifPassInput.value;
+
+    el.discoveryStatus.textContent = t('onvifProbingDirect');
+    el.discoveryStatus.className = 'alert alert-info py-2 small';
+    el.discoveryStatus.classList.remove('d-none');
+    el.btnDirectProbe.disabled = true;
+
+    try {
+      const res = await authFetch('/api/cameras/discovery/probe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, port, username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Direct ONVIF probe failed');
+      }
+      el.discoveryStatus.classList.add('d-none');
+      renderDiscoveryResults([data]);
+    } catch (err) {
+      el.discoveryStatus.textContent = `Error: ${err.message}`;
+      el.discoveryStatus.className = 'alert alert-danger py-2 small';
+      el.discoveryStatus.classList.remove('d-none');
+    } finally {
+      el.btnDirectProbe.disabled = false;
+    }
+  });
+}
+
 function renderDiscoveryResults(devices) {
   el.discoveryResultsList.innerHTML = '';
   
-  if (devices.length === 0) {
+  if (!devices || devices.length === 0) {
     el.discoveryResultsList.innerHTML = `<div class="text-center p-4 text-warning"><i class="fa-solid fa-circle-exclamation fa-2x mb-2"></i><br>${t('onvifNoCameras')}</div>`;
     return;
   }
   
-  devices.forEach(d => {
+  devices.forEach((d, idx) => {
     const item = document.createElement('div');
-    item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 mb-2 rounded-3';
+    item.className = 'list-group-item list-group-item-action d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 mb-2 rounded-3';
     item.style.background = 'var(--surface-subtle)';
     item.style.border = '1px solid var(--glass-border)';
     
-    const ip = d.address || (d.xaddrs && d.xaddrs[0] ? new URL(d.xaddrs[0]).hostname : '');
-    const model = d.hardware || d.name || 'Unknown Camera';
-    
+    let ip = d.address || '';
+    let onvifPort = d.port || '';
+    if (d.xaddrs && d.xaddrs[0]) {
+      try {
+        const parsedXaddr = new URL(d.xaddrs[0]);
+        if (!ip) ip = parsedXaddr.hostname;
+        if (!onvifPort) onvifPort = parsedXaddr.port || '80';
+      } catch (e) {}
+    }
+
+    const model = d.name || d.hardware || 'Unknown Camera';
+    const userVal = el.onvifUserInput && el.onvifUserInput.value.trim() ? el.onvifUserInput.value.trim() : 'admin';
+    const passVal = el.onvifPassInput && el.onvifPassInput.value ? el.onvifPassInput.value : 'passwort';
+
+    // Determine best default RTSP path (TP-Link Tapo uses port 2020 -> /stream1, others -> /ch0)
+    const isTapo = String(onvifPort) === '2020' || /tapo|c200|c210|c310|tc60|tc70/i.test(model);
+    const fallbackRtsp = isTapo
+      ? `rtsp://${userVal}:${passVal}@${ip}:554/stream1`
+      : `rtsp://${userVal}:${passVal}@${ip}:554/ch0`;
+    const resolvedStreamUrl = d.streamUrl || fallbackRtsp;
+
+    let profileSelectHtml = '';
+    if (Array.isArray(d.profiles) && d.profiles.length > 1) {
+      const optionsHtml = d.profiles.map(p => `<option value="${escapeHtml(p.rtspUrl)}">${escapeHtml(p.name)} (${escapeHtml(maskCameraUrl(p.rtspUrl))})</option>`).join('');
+      profileSelectHtml = `
+        <div class="mt-2">
+          <select class="form-select form-select-sm" id="onvifProfileSelect_${idx}">
+            ${optionsHtml}
+          </select>
+        </div>
+      `;
+    }
+
     item.innerHTML = `
-      <div class="d-flex align-items-center gap-3">
+      <div class="d-flex align-items-center gap-3 flex-grow-1">
         <img src="icons/3d/chip.png" alt="" class="icon-3d icon-3d-lg">
-        <div>
+        <div class="flex-grow-1">
           <h6 class="fw-bold mb-1">${escapeHtml(model)}</h6>
-          <span class="badge bg-secondary mb-1">IP: ${escapeHtml(ip)}</span>
-          <div class="text-secondary small">Location: ${escapeHtml(d.location || 'N/A')}</div>
+          <div class="d-flex flex-wrap gap-1 mb-1">
+            <span class="badge bg-secondary">IP: ${escapeHtml(ip)}</span>
+            ${onvifPort ? `<span class="badge bg-info text-dark">ONVIF :${escapeHtml(String(onvifPort))}</span>` : ''}
+            ${d.firmware ? `<span class="badge bg-dark border border-secondary">${escapeHtml(d.firmware)}</span>` : ''}
+          </div>
+          <div class="text-secondary small font-monospace">${escapeHtml(maskCameraUrl(resolvedStreamUrl))}</div>
+          ${profileSelectHtml}
         </div>
       </div>
-      <button class="btn btn-neo-primary btn-sm d-inline-flex align-items-center gap-2" onclick="selectDiscoveredCamera('${escapeHtml(model)}', '${escapeHtml(ip)}')">
+      <button class="btn btn-neo-primary btn-sm d-inline-flex align-items-center gap-2" onclick="selectDiscoveredCamera('${escapeHtml(model)}', '${escapeHtml(ip)}', '${escapeHtml(resolvedStreamUrl)}', ${idx})">
         <img src="icons/3d/add-camera.png" alt="" class="icon-3d icon-3d-sm">${t('btnAdopt')}
       </button>
     `;
@@ -1143,14 +1231,17 @@ function renderDiscoveryResults(devices) {
   });
 }
 
-window.selectDiscoveredCamera = (model, ip) => {
+window.selectDiscoveredCamera = (model, ip, streamUrl, idx) => {
+  const selectEl = document.getElementById(`onvifProfileSelect_${idx}`);
+  const chosenUrl = (selectEl && selectEl.value) ? selectEl.value : (streamUrl || `rtsp://admin:passwort@${ip}:554/ch0`);
+
   el.discoveryModal.hide();
   
   el.cameraForm.reset();
   el.cameraIdField.value = '';
   el.dashboardLinkContainer.classList.add('d-none');
   el.cameraNameInput.value = `${model}`;
-  el.cameraUrlInput.value = `rtsp://admin:passwort@${ip}:554/ch0`;
+  el.cameraUrlInput.value = chosenUrl;
   el.cameraStreamType.value = 'rtsp';
   el.cameraRefreshInterval.value = '2';
   el.refreshIntervalContainer.classList.add('d-none');

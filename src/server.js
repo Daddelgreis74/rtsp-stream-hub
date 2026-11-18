@@ -490,6 +490,123 @@ app.get('/api/cameras/discovery', authenticateToken, async (req, res) => {
   }
 });
 
+// Direct ONVIF Unicast Probe by IP, Custom Port (e.g. 2020 for TP-Link Tapo), and optional Credentials
+app.post('/api/cameras/discovery/probe', authenticateToken, async (req, res) => {
+  if (req.user.can_edit !== 1) {
+    return res.status(403).json({ error: 'No permission to discover cameras' });
+  }
+
+  const { host, port, username, password } = req.body || {};
+  const cleanHost = host ? String(host).trim().replace(/^https?:\/\//i, '').split('/')[0].split(':')[0] : '';
+  if (!cleanHost || !/^[a-zA-Z0-9.-]+$/.test(cleanHost)) {
+    return res.status(400).json({ error: 'Valid IP address or hostname required' });
+  }
+
+  const cleanPort = Math.min(65535, Math.max(1, parseInt(port, 10) || 2020));
+  const cleanUser = username ? String(username).trim() : '';
+  const cleanPass = password ? String(password) : '';
+  const xaddr = `http://${cleanHost}:${cleanPort}/onvif/device_service`;
+
+  // Helper: Attach credentials into an rtsp:// URL if provided
+  const injectRtspAuth = (rawRtspUrl) => {
+    if (!rawRtspUrl || !cleanUser) return rawRtspUrl;
+    try {
+      const parsed = new URL(rawRtspUrl);
+      parsed.username = cleanUser;
+      parsed.password = cleanPass;
+      return parsed.toString();
+    } catch (e) {
+      return rawRtspUrl;
+    }
+  };
+
+  try {
+    const dev = new onvif.OnvifDevice({
+      xaddr,
+      user: cleanUser,
+      pass: cleanPass
+    });
+
+    const info = await dev.init();
+    const rawProfiles = dev.getProfileList() || [];
+    const profiles = rawProfiles.map(p => {
+      const rtspUrl = (p.stream && (p.stream.rtsp || p.stream.udp)) || dev.getUdpStreamUrl() || `rtsp://${cleanHost}:554/stream1`;
+      return {
+        name: p.name || p.token || 'Stream',
+        token: p.token || '',
+        rtspUrl: injectRtspAuth(rtspUrl)
+      };
+    });
+
+    const defaultStream = profiles.length > 0
+      ? profiles[0].rtspUrl
+      : injectRtspAuth(dev.getUdpStreamUrl() || `rtsp://${cleanHost}:554/stream1`);
+
+    return res.json({
+      address: cleanHost,
+      port: cleanPort,
+      xaddrs: [xaddr],
+      name: `${info.Manufacturer || ''} ${info.Model || 'ONVIF Camera'}`.trim(),
+      hardware: info.Model || info.HardwareId || 'ONVIF Camera',
+      firmware: info.FirmwareVersion || '',
+      serial: info.SerialNumber || '',
+      location: 'Direct ONVIF Probe',
+      streamUrl: defaultStream,
+      profiles
+    });
+  } catch (initErr) {
+    // Fallback: Check if ONVIF endpoint is reachable without/with failed auth (e.g. Tapo C200 on port 2020)
+    const isAuthError = /401|Unauthorized|Not Authorized/i.test(initErr.message || '');
+    const soapBody = '<?xml version="1.0" encoding="UTF-8"?><s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Body><GetServices xmlns="http://www.onvif.org/ver10/device/wsdl"><IncludeCapability>false</IncludeCapability></GetServices></s:Body></s:Envelope>';
+
+    const reachable = await new Promise((resolve) => {
+      const probeReq = http.request({
+        host: cleanHost,
+        port: cleanPort,
+        path: '/onvif/device_service',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/soap+xml; charset=utf-8',
+          'Content-Length': Buffer.byteLength(soapBody)
+        },
+        timeout: 3500
+      }, (probeRes) => {
+        probeRes.resume();
+        resolve(probeRes.statusCode === 200 || probeRes.statusCode === 401 || probeRes.statusCode === 400);
+      });
+      probeReq.on('timeout', () => { probeReq.destroy(); resolve(false); });
+      probeReq.on('error', () => resolve(false));
+      probeReq.write(soapBody);
+      probeReq.end();
+    });
+
+    if (reachable || isAuthError) {
+      const fallbackPath = cleanPort === 2020 ? '/stream1' : '/ch0';
+      const fallbackSubPath = cleanPort === 2020 ? '/stream2' : '/ch1';
+      const mainUrl = injectRtspAuth(`rtsp://${cleanHost}:554${fallbackPath}`);
+      const subUrl = injectRtspAuth(`rtsp://${cleanHost}:554${fallbackSubPath}`);
+      return res.json({
+        address: cleanHost,
+        port: cleanPort,
+        xaddrs: [xaddr],
+        name: cleanPort === 2020 ? `TP-Link Tapo (${cleanHost})` : `ONVIF Camera (${cleanHost})`,
+        hardware: cleanPort === 2020 ? 'TP-Link Tapo (ONVIF :2020)' : `ONVIF Device (:${cleanPort})`,
+        location: isAuthError ? 'Auth required (Enter camera user/password)' : 'Direct ONVIF Probe',
+        authWarning: isAuthError,
+        streamUrl: mainUrl,
+        profiles: [
+          { name: 'Main Stream (HD)', token: 'main', rtspUrl: mainUrl },
+          { name: 'Sub Stream (SD)', token: 'sub', rtspUrl: subUrl }
+        ]
+      });
+    }
+
+    return res.status(502).json({
+      error: `No ONVIF service found at ${cleanHost}:${cleanPort} (${initErr.message})`
+    });
+  }
+});
+
 // Generate Permanent JWT Token for Dashboard Camera Stream (Strictly scoped to camera ID with minimal stream-viewer role)
 app.get('/api/cameras/:id/token', authenticateToken, async (req, res) => {
   try {

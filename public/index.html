@@ -13,7 +13,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- FontAwesome for icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-  <link href="css/custom.css" rel="stylesheet">
+  <link href="css/custom.css?v=1.2.1" rel="stylesheet">
 </head>
 <body>
 
@@ -328,12 +328,49 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <!-- 1. Automatic Multicast Network Scan -->
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-secondary small" data-i18n="onvifScanDesc">Scans local network for ONVIF compliant cameras.</span>
-            <button class="btn btn-neo-primary btn-sm" id="btnRunDiscovery">
-              <i class="fa-solid fa-rotate me-1"></i><span data-i18n="btnStartScan">Start Scan</span>
+            <span class="text-secondary small" data-i18n="onvifScanDesc">Scans local network for ONVIF compliant cameras (UDP 3702).</span>
+            <button class="btn btn-neo-glass btn-sm d-inline-flex align-items-center gap-2" id="btnRunDiscovery">
+              <i class="fa-solid fa-rotate"></i><span data-i18n="btnStartScan">Auto Scan (LAN)</span>
             </button>
           </div>
+
+          <!-- 2. Direct IP & Custom ONVIF Port Probe (e.g. Port 2020 for TP-Link Tapo) -->
+          <div class="neo-dash-link-box mb-3">
+            <div class="small fw-semibold neo-accent-label mb-2" data-i18n="onvifDirectTitle">Direct ONVIF Probe (IP &amp; Custom Port, e.g. 2020 for TP-Link Tapo)</div>
+            <form id="directOnvifProbeForm" class="row g-2 align-items-end">
+              <div class="col-sm-4">
+                <label for="onvifHostInput" class="form-label small text-secondary mb-1" data-i18n="onvifIpLabel">Camera IP / Host</label>
+                <input type="text" class="form-control form-control-sm" id="onvifHostInput" placeholder="192.168.178.101" required>
+              </div>
+              <div class="col-sm-2">
+                <label for="onvifPortInput" class="form-label small text-secondary mb-1" data-i18n="onvifPortLabel">ONVIF Port</label>
+                <input type="number" class="form-control form-control-sm" id="onvifPortInput" value="2020" min="1" max="65535" required>
+              </div>
+              <div class="col-sm-3">
+                <label for="onvifUserInput" class="form-label small text-secondary mb-1" data-i18n="usernameLabel">Username</label>
+                <input type="text" class="form-control form-control-sm" id="onvifUserInput" placeholder="Optional">
+              </div>
+              <div class="col-sm-3">
+                <label for="onvifPassInput" class="form-label small text-secondary mb-1" data-i18n="passwordLabel">Password</label>
+                <input type="password" class="form-control form-control-sm" id="onvifPassInput" placeholder="Optional">
+              </div>
+              <div class="col-12 mt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex gap-1 align-items-center small text-secondary">
+                  <span data-i18n="onvifPortPresets">Port Presets:</span>
+                  <button type="button" class="btn btn-neo-glass btn-sm py-0 px-2" onclick="document.getElementById('onvifPortInput').value='2020'">2020 (Tapo)</button>
+                  <button type="button" class="btn btn-neo-glass btn-sm py-0 px-2" onclick="document.getElementById('onvifPortInput').value='80'">80 (Thingino/Std)</button>
+                  <button type="button" class="btn btn-neo-glass btn-sm py-0 px-2" onclick="document.getElementById('onvifPortInput').value='8000'">8000 (Reolink)</button>
+                  <button type="button" class="btn btn-neo-glass btn-sm py-0 px-2" onclick="document.getElementById('onvifPortInput').value='8899'">8899</button>
+                </div>
+                <button type="submit" class="btn btn-neo-primary btn-sm px-3" id="btnDirectProbe">
+                  <i class="fa-solid fa-magnifying-glass me-1"></i><span data-i18n="btnProbeIp">Probe Camera</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
           <div id="discoveryStatus" class="alert alert-info d-none">Scanning network... Please wait...</div>
           <div class="list-group" id="discoveryResultsList">
             <!-- Dynamically populated discovery results -->
@@ -368,6 +405,6 @@
 
   <!-- Bootstrap Bundle with Popper -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=1.2.1"></script>
 </body>
 </html>
