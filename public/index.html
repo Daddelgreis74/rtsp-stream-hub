@@ -5,94 +5,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RTSP Stream Hub</title>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <!-- Google Fonts: Outfit (Neo Deck Typography) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- FontAwesome for icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
   <link href="css/custom.css" rel="stylesheet">
 </head>
-<body class="bg-body-tertiary">
+<body>
+
+  <!-- ================= AMBIENT AURORA BACKGROUND ================= -->
+  <div class="bg-scene" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+  </div>
 
   <!-- ================= LOGIN SECTION ================= -->
   <div id="loginSection" class="container d-flex justify-content-center align-items-center vh-100 position-relative">
-    <div class="position-absolute top-0 end-0 p-3">
-      <button class="btn btn-outline-secondary btn-sm" id="btnLoginLangToggle">
-        <i class="fa-solid fa-globe me-1"></i><span id="loginLangText">EN</span>
+    <div class="position-absolute top-0 end-0 p-4 d-flex gap-2">
+      <button class="btn-glass-icon" id="btnLoginLangToggle" title="Switch Language">
+        <i class="fa-solid fa-globe"></i><span id="loginLangText">EN</span>
       </button>
     </div>
-    <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
+    <div class="glass-panel login-card">
       <div class="text-center mb-4">
-        <img src="icon.svg" alt="RTSP Stream Hub" style="width: 64px; height: 64px;" class="mb-2">
-        <h3 class="fw-bold">RTSP Stream Hub</h3>
-        <p class="text-muted" data-i18n="loginSubtitle">Please sign in to continue</p>
+        <div class="login-logo-ring">
+          <img src="icon.svg" alt="RTSP Stream Hub" style="width: 48px; height: 48px;">
+        </div>
+        <h3 class="fw-bold mb-1">RTSP Stream Hub</h3>
+        <p class="text-secondary small mb-0" data-i18n="loginSubtitle">Please sign in to continue</p>
       </div>
       <form id="loginForm">
         <div class="mb-3">
-          <label for="usernameInput" class="form-label" data-i18n="usernameLabel">Username</label>
+          <label for="usernameInput" class="form-label small fw-semibold" data-i18n="usernameLabel">Username</label>
           <input type="text" class="form-control" id="usernameInput" required placeholder="e.g. admin">
         </div>
         <div class="mb-3">
-          <label for="passwordInput" class="form-label" data-i18n="passwordLabel">Password</label>
+          <label for="passwordInput" class="form-label small fw-semibold" data-i18n="passwordLabel">Password</label>
           <input type="password" class="form-control" id="passwordInput" required placeholder="••••••••">
         </div>
-        <div class="alert alert-danger d-none" id="loginAlert"></div>
-        <button type="submit" class="btn btn-primary w-100 fw-bold" data-i18n="loginBtn">Sign In</button>
+        <div class="alert alert-danger d-none py-2 small" id="loginAlert"></div>
+        <button type="submit" class="btn btn-neo-primary w-100 mt-2 py-2" data-i18n="loginBtn">Sign In</button>
       </form>
     </div>
   </div>
 
   <!-- ================= MAIN SECTION ================= -->
   <div id="mainSection" class="d-none">
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg border-bottom shadow-sm bg-body-flat">
-      <div class="container">
-        <span class="navbar-brand fw-bold text-primary d-flex align-items-center gap-2">
-          <img src="icon.svg" alt="Logo" style="width: 28px; height: 28px;">
-          <span>RTSP Stream Hub</span>
-        </span>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navMenu">
-          <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-              <a class="nav-link active" id="btnCamerasView" href="#"><i class="fa-solid fa-camera me-1"></i><span data-i18n="navCameras">Cameras</span></a>
-            </li>
-            <li class="nav-item d-none" id="navAdminLink">
-              <a class="nav-link" id="btnAdminView" href="#"><i class="fa-solid fa-user-gear me-1"></i><span data-i18n="navUsers">User Management</span></a>
-            </li>
-          </ul>
-          <div class="d-flex align-items-center gap-2">
-            <!-- Language Switcher -->
-            <button class="btn btn-outline-secondary btn-sm" id="btnLangToggle" title="Switch Language">
-              <i class="fa-solid fa-globe me-1"></i><span id="langText">EN</span>
-            </button>
-            <!-- Theme Toggle -->
-            <button class="btn btn-outline-secondary btn-sm" id="btnThemeToggle" title="Toggle Theme">
-              <i class="fa-solid fa-moon" id="themeIcon"></i>
-            </button>
-            <span class="badge bg-primary px-3 py-2" id="userBadge">User</span>
-            <button class="btn btn-outline-danger btn-sm" id="btnLogoutBtn">
-              <i class="fa-solid fa-sign-out-alt me-1"></i><span data-i18n="logoutBtn">Logout</span>
-            </button>
+    <!-- Floating Glassmorphism Topbar -->
+    <div class="container neo-topbar-wrap">
+      <nav class="navbar navbar-expand-lg neo-topbar">
+        <div class="container-fluid px-1">
+          <span class="navbar-brand d-flex align-items-center gap-2 me-3 mb-0">
+            <img src="icon.svg" alt="Logo" style="width: 30px; height: 30px;">
+            <span class="brand-title">RTSP Stream Hub</span>
+          </span>
+          <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navMenu">
+            <div class="neo-nav-pills me-auto my-2 my-lg-0">
+              <a class="neo-nav-pill active" id="btnCamerasView" href="#">
+                <img src="icons/3d/camera.png" alt="" class="icon-3d icon-3d-sm"><span data-i18n="navCameras">Cameras</span>
+              </a>
+              <a class="neo-nav-pill d-none" id="btnAdminView" href="#">
+                <img src="icons/3d/users.png" alt="" class="icon-3d icon-3d-sm"><span data-i18n="navUsers">User Management</span>
+              </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <!-- Language Switcher -->
+              <button class="btn-glass-icon" id="btnLangToggle" title="Switch Language">
+                <i class="fa-solid fa-globe"></i><span id="langText">EN</span>
+              </button>
+              <!-- Theme Toggle -->
+              <button class="btn-glass-icon" id="btnThemeToggle" title="Toggle Theme">
+                <i class="fa-solid fa-sun" id="themeIcon"></i>
+              </button>
+              <!-- User Profile Dropdown -->
+              <div class="dropdown">
+                <button class="user-profile-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span class="user-avatar-circle" id="userAvatarInitial">A</span>
+                  <span id="userBadge">Admin</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end neo-dropdown-menu">
+                  <li>
+                    <button class="dropdown-item" type="button" id="btnChangeOwnPassword">
+                      <img src="icons/3d/key.png" alt="" class="icon-3d icon-3d-sm"><span data-i18n="modalChangePassword">Change Own Password</span>
+                    </button>
+                  </li>
+                  <li><hr class="dropdown-divider opacity-25"></li>
+                  <li>
+                    <button class="dropdown-item text-danger" type="button" id="btnLogoutBtn">
+                      <i class="fa-solid fa-right-from-bracket"></i><span data-i18n="logoutBtn">Logout</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
 
-    <!-- Main Container -->
+    <!-- Main Content Container -->
     <div class="container py-4">
 
       <!-- Cameras Page View -->
       <div id="camerasPage">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2 class="fw-bold mb-0" data-i18n="myCamerasTitle">My Cameras</h2>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary fw-bold d-none" id="btnDiscoverOpenBtn">
-              <i class="fa-solid fa-satellite-dish me-1"></i><span data-i18n="onvifScanBtn">ONVIF Discovery</span>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <div class="d-flex align-items-center gap-3">
+            <img src="icons/3d/camera.png" alt="" class="icon-3d icon-3d-lg">
+            <div>
+              <h2 class="fw-bold mb-0" data-i18n="myCamerasTitle">My Cameras</h2>
+              <p class="text-secondary small mb-0" data-i18n="camerasSubtitle">Centralized live stream multiplexer &amp; dashboard proxy</p>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-neo-glass d-inline-flex align-items-center gap-2" id="btnToggleLiveGrid" title="Toggle Live Previews">
+              <img src="icons/3d/grid.png" alt="" class="icon-3d icon-3d-sm"><span data-i18n="liveGridBtn">Live Grid</span>
             </button>
-            <button class="btn btn-success fw-bold d-none" id="btnAddCameraModalOpenBtn">
-              <i class="fa-solid fa-plus me-1"></i><span data-i18n="addCameraBtn">Add Camera</span>
+            <button class="btn btn-neo-glass d-none d-inline-flex align-items-center gap-2" id="btnDiscoverOpenBtn">
+              <img src="icons/3d/onvif.png" alt="" class="icon-3d icon-3d-sm"><span data-i18n="onvifScanBtn">ONVIF Discovery</span>
+            </button>
+            <button class="btn btn-neo-primary d-none d-inline-flex align-items-center gap-2" id="btnAddCameraModalOpenBtn">
+              <img src="icons/3d/add-camera.png" alt="" class="icon-3d icon-3d-sm"><span data-i18n="addCameraBtn">Add Camera</span>
             </button>
           </div>
         </div>
@@ -104,16 +145,22 @@
 
       <!-- User Management Page View -->
       <div id="adminPage" class="d-none">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2 class="fw-bold mb-0" data-i18n="usersTitle">User Management</h2>
-          <button class="btn btn-primary fw-bold" id="btnAddUserModalOpenBtn">
-            <i class="fa-solid fa-user-plus me-1"></i><span data-i18n="createUserBtn">Create User</span>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <div class="d-flex align-items-center gap-3">
+            <img src="icons/3d/users.png" alt="" class="icon-3d icon-3d-lg">
+            <div>
+              <h2 class="fw-bold mb-0" data-i18n="usersTitle">User Management</h2>
+              <p class="text-secondary small mb-0" data-i18n="usersSubtitle">Role hierarchy: Admin, CoAdmin, Moderator &amp; User</p>
+            </div>
+          </div>
+          <button class="btn btn-neo-primary d-inline-flex align-items-center gap-2" id="btnAddUserModalOpenBtn">
+            <img src="icons/3d/users.png" alt="" class="icon-3d icon-3d-sm"><span data-i18n="createUserBtn">Create User</span>
           </button>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="glass-panel neo-table-card">
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle neo-table">
               <thead>
                 <tr>
                   <th data-i18n="thUsername">Username</th>
@@ -138,27 +185,27 @@
 
   <!-- Add/Edit Camera Modal -->
   <div class="modal fade" id="cameraModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="cameraModalTitle" data-i18n="modalAddCamera">Add Camera</h5>
+          <h5 class="modal-title fw-bold" id="cameraModalTitle" data-i18n="modalAddCamera">Add Camera</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <form id="cameraForm">
             <input type="hidden" id="cameraIdField">
             <div class="mb-3">
-              <label for="cameraNameInput" class="form-label" data-i18n="labelCameraName">Camera Name</label>
+              <label for="cameraNameInput" class="form-label small fw-semibold" data-i18n="labelCameraName">Camera Name</label>
               <input type="text" class="form-control" id="cameraNameInput" required placeholder="e.g. Garden TC60">
             </div>
             <div class="mb-3">
-              <label for="cameraUrlInput" class="form-label" data-i18n="labelCameraUrl">Camera Stream URL (RTSP, HTTP-MJPEG, HLS, Snapshot)</label>
+              <label for="cameraUrlInput" class="form-label small fw-semibold" data-i18n="labelCameraUrl">Camera Stream URL (RTSP, HTTP-MJPEG, HLS, Snapshot)</label>
               <input type="text" class="form-control" id="cameraUrlInput" required placeholder="rtsp://..., http://..., https://...m3u8, .jpg">
-              <div class="form-text" data-i18n="helpCameraUrl">Supports all stream formats (RTSP H.264/H.265, webcams, HLS streams and JPEG snapshots).</div>
+              <div class="form-text small" data-i18n="helpCameraUrl">Supports all stream formats (RTSP H.264/H.265, webcams, HLS streams and JPEG snapshots).</div>
             </div>
             <div class="row">
               <div class="col-md-7 mb-3">
-                <label for="cameraStreamType" class="form-label" data-i18n="labelStreamType">Stream Type</label>
+                <label for="cameraStreamType" class="form-label small fw-semibold" data-i18n="labelStreamType">Stream Type</label>
                 <select class="form-select" id="cameraStreamType">
                   <option value="auto" data-i18n="optAuto">Auto Detect</option>
                   <option value="rtsp" data-i18n="optRtsp">RTSP Stream (H.264 / H.265)</option>
@@ -168,7 +215,7 @@
                 </select>
               </div>
               <div class="col-md-5 mb-3 d-none" id="refreshIntervalContainer">
-                <label for="cameraRefreshInterval" class="form-label" data-i18n="labelInterval">Interval</label>
+                <label for="cameraRefreshInterval" class="form-label small fw-semibold" data-i18n="labelInterval">Interval</label>
                 <select class="form-select" id="cameraRefreshInterval">
                   <option value="1">1 second</option>
                   <option value="2" selected>2 seconds</option>
@@ -178,57 +225,94 @@
                 </select>
               </div>
             </div>
-            <div class="mb-3 d-none" id="dashboardLinkContainer">
-              <label class="form-label fw-bold text-success" data-i18n="labelDashboardLink">Dashboard Stream Link (MJPEG)</label>
+            <div class="mb-3 d-none neo-dash-link-box" id="dashboardLinkContainer">
+              <label class="form-label small fw-semibold neo-accent-label mb-1" data-i18n="labelDashboardLink">Dashboard Stream Link (MJPEG)</label>
               <div class="input-group">
-                <input type="text" class="form-control form-control-sm" id="dashboardLinkInput" readonly>
-                <button class="btn btn-outline-success btn-sm" type="button" id="btnCopyDashboardLink" title="Copy Link">
+                <input type="text" class="form-control form-control-sm font-monospace" id="dashboardLinkInput" readonly>
+                <button class="btn btn-neo-primary btn-sm px-3" type="button" id="btnCopyDashboardLink" title="Copy Link">
                   <i class="fa-solid fa-copy"></i>
                 </button>
               </div>
-              <div class="form-text" data-i18n="helpDashboardLink">Long-lived tokenized link for your SmartHome Dashboard (valid for 20 years).</div>
+              <div class="form-text small mt-1" data-i18n="helpDashboardLink">Long-lived tokenized link for your SmartHome Dashboard (valid for 20 years).</div>
             </div>
-            <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnSaveCamera" data-i18n="btnSave">Save</button>
+            <button type="submit" class="btn btn-neo-primary w-100 mt-2" id="btnSaveCamera" data-i18n="btnSave">Save</button>
           </form>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Add User Modal -->
+  <!-- Create / Edit User Modal -->
   <div class="modal fade" id="userModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" data-i18n="modalCreateUser">Create New User</h5>
+          <h5 class="modal-title fw-bold" id="userModalTitle" data-i18n="modalCreateUser">Create New User</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <form id="userForm">
+            <input type="hidden" id="editUserIdField">
             <div class="mb-3">
-              <label for="newUsernameInput" class="form-label" data-i18n="usernameLabel">Username</label>
+              <label for="newUsernameInput" class="form-label small fw-semibold" data-i18n="usernameLabel">Username</label>
               <input type="text" class="form-control" id="newUsernameInput" required>
             </div>
             <div class="mb-3">
-              <label for="newPasswordInput" class="form-label" data-i18n="passwordLabel">Password</label>
+              <label for="newPasswordInput" class="form-label small fw-semibold" id="userPasswordLabel" data-i18n="passwordLabel">Password</label>
               <input type="password" class="form-control" id="newPasswordInput" required>
+              <div class="form-text small d-none" id="passwordEditHelp" data-i18n="helpPasswordEdit">Leave empty to keep the current password.</div>
             </div>
             <div class="mb-3">
-              <label for="newUserRole" class="form-label" data-i18n="thRole">Role</label>
+              <label for="newUserRole" class="form-label small fw-semibold" data-i18n="thRole">Role</label>
               <select class="form-select" id="newUserRole">
-                <option value="user" data-i18n="optRoleUser">Standard User</option>
-                <option value="admin" data-i18n="optRoleAdmin">Administrator</option>
+                <option value="admin" id="optRoleAdminEl" data-i18n="optRoleAdmin">Administrator (Admin)</option>
+                <option value="coadmin" id="optRoleCoAdminEl" data-i18n="optRoleCoAdmin">Co-Administrator (CoAdmin)</option>
+                <option value="moderator" data-i18n="optRoleModerator">Moderator</option>
+                <option value="user" selected data-i18n="optRoleUser">Standard User (User)</option>
               </select>
+              <div class="form-text small" id="roleHintText" data-i18n="helpRolePermissions">Select a role to preset default camera permissions.</div>
             </div>
-            <div class="mb-3 form-check">
-              <input type="checkbox" class="form-check-input" id="newUserView" checked>
-              <label class="form-check-label" for="newUserView" data-i18n="permAllowView">Can view cameras</label>
+            <div class="p-3 rounded-3 mb-3" style="background: var(--surface-subtle); border: 1px solid var(--glass-border);">
+              <div class="form-check form-switch mb-2">
+                <input type="checkbox" class="form-check-input" id="newUserView" checked>
+                <label class="form-check-label" for="newUserView" data-i18n="permAllowView">Can view cameras</label>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input type="checkbox" class="form-check-input" id="newUserEdit">
+                <label class="form-check-label" for="newUserEdit" data-i18n="permAllowEdit">Can edit cameras</label>
+              </div>
             </div>
-            <div class="mb-3 form-check">
-              <input type="checkbox" class="form-check-input" id="newUserEdit">
-              <label class="form-check-label" for="newUserEdit" data-i18n="permAllowEdit">Can edit cameras</label>
+            <button type="submit" class="btn btn-neo-primary w-100" id="btnSaveUser" data-i18n="btnCreate">Create</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Own Password Modal -->
+  <div class="modal fade" id="ownPasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold d-flex align-items-center gap-2"><img src="icons/3d/key.png" alt="" class="icon-3d icon-3d-md"><span data-i18n="modalChangePassword">Change Own Password</span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="ownPasswordForm">
+            <div class="mb-3">
+              <label for="currentOwnPasswordInput" class="form-label small fw-semibold" data-i18n="currentPasswordLabel">Current Password</label>
+              <input type="password" class="form-control" id="currentOwnPasswordInput" required>
             </div>
-            <button type="submit" class="btn btn-primary w-100 fw-bold" data-i18n="btnCreate">Create</button>
+            <div class="mb-3">
+              <label for="newOwnPasswordInput" class="form-label small fw-semibold" data-i18n="newPasswordLabel">New Password</label>
+              <input type="password" class="form-control" id="newOwnPasswordInput" required>
+            </div>
+            <div class="mb-3">
+              <label for="confirmOwnPasswordInput" class="form-label small fw-semibold" data-i18n="confirmPasswordLabel">Confirm New Password</label>
+              <input type="password" class="form-control" id="confirmOwnPasswordInput" required>
+            </div>
+            <div class="alert d-none py-2 small" id="ownPasswordAlert"></div>
+            <button type="submit" class="btn btn-neo-primary w-100" data-i18n="btnSave">Save</button>
           </form>
         </div>
       </div>
@@ -237,16 +321,16 @@
 
   <!-- ONVIF Discovery Modal -->
   <div class="modal fade" id="discoveryModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="fa-solid fa-satellite-dish me-2 text-primary"></i><span data-i18n="modalOnvifTitle">ONVIF Camera Discovery</span></h5>
+          <h5 class="modal-title fw-bold d-flex align-items-center gap-2"><img src="icons/3d/onvif.png" alt="" class="icon-3d icon-3d-md"><span data-i18n="modalOnvifTitle">ONVIF Camera Discovery</span></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-muted small" data-i18n="onvifScanDesc">Scans local network for ONVIF compliant cameras.</span>
-            <button class="btn btn-outline-primary btn-sm fw-bold" id="btnRunDiscovery">
+            <span class="text-secondary small" data-i18n="onvifScanDesc">Scans local network for ONVIF compliant cameras.</span>
+            <button class="btn btn-neo-primary btn-sm" id="btnRunDiscovery">
               <i class="fa-solid fa-rotate me-1"></i><span data-i18n="btnStartScan">Start Scan</span>
             </button>
           </div>
@@ -261,16 +345,18 @@
 
   <!-- Stream Player Modal -->
   <div class="modal fade" id="playerModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content overflow-hidden">
         <div class="modal-header">
-          <h5 class="modal-title" id="playerModalTitle">Camera Stream</h5>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge-live-dot">LIVE</span>
+            <h5 class="modal-title fw-bold mb-0" id="playerModalTitle">Camera Stream</h5>
+          </div>
           <button type="button" class="btn-close" id="btnStopStream" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-0 bg-black d-flex align-items-center justify-content-center" style="aspect-ratio: 16/9;">
           <div class="w-100 h-100 position-relative" id="playerContainer">
             <img id="mjpegImg" class="w-100 h-100 d-none" style="object-fit: contain;">
-            
             <div class="position-absolute bottom-0 start-0 p-3 bg-dark bg-opacity-75 text-white w-100 d-flex justify-content-between align-items-center">
               <span id="playerStatus" class="small" data-i18n="playerLoading">Loading stream...</span>
             </div>
